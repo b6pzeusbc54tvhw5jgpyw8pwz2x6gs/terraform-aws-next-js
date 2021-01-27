@@ -3,8 +3,6 @@ import { S3 } from 'aws-sdk';
 import unzipper from 'unzipper';
 import { getType } from 'mime';
 
-import { deploymentConfigurationKey } from './constants';
-
 // Immutable files like css, js, images with hashed file names
 const CacheControlImmutable = 'public,max-age=31536000,immutable';
 // Static pre-rendered HTML routes
@@ -27,7 +25,6 @@ interface Props {
 
 interface Response {
   files: string[];
-  buildManifestContent: string;
 }
 
 export async function deployTrigger(props: Props): Promise<Response> {
@@ -43,7 +40,6 @@ export async function deployTrigger(props: Props): Promise<Response> {
   const uploads: Promise<S3.ManagedUpload.SendData>[] = [];
   // Keep track of all files that are processed
   const files: string[] = [];
-  let buildManifestContent = ''
 
   for await (const e of zip) {
     const entry = e as unzipper.Entry;
@@ -55,13 +51,6 @@ export async function deployTrigger(props: Props): Promise<Response> {
       // Static pre-rendered pages have no file extension,
       // files without extension get HTML mime type as fallback
       const ContentType = getType(fileName) || 'text/html';
-
-      let buffer: Buffer | null = null
-      if (fileName === `_next/static/${buildId}/_buildManifest.js`) {
-        buffer = await entry.buffer()
-        buildManifestContent = buffer.toString()
-      }
- 
       const Key = fileName.startsWith('_next/static/')
         ? path.join(`static`,buildId,fileName)
         : path.join(buildId, fileName)
@@ -69,18 +58,15 @@ export async function deployTrigger(props: Props): Promise<Response> {
       const uploadParams: S3.Types.PutObjectRequest = {
         Bucket: deployBucket,
         Key,
-        Body: buffer || entry,
+        Body: entry,
         ContentType,
         CacheControl: ContentType === 'text/html'
           ? CacheControlStaticHtml
           : CacheControlImmutable,
       };
 
-      // Sorry, but you cannot override the manifest
-      if (fileName !== deploymentConfigurationKey) {
-        files.push(fileName);
-        uploads.push(s3.upload(uploadParams).promise());
-      }
+      files.push(fileName);
+      uploads.push(s3.upload(uploadParams).promise());
     } else {
       entry.autodrain();
     }
@@ -91,5 +77,5 @@ export async function deployTrigger(props: Props): Promise<Response> {
   // Cleanup
   await s3.deleteObject(params).promise();
 
-  return { files, buildManifestContent };
+  return { files };
 }

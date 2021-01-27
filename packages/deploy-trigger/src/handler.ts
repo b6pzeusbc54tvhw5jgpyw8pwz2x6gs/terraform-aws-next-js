@@ -1,10 +1,9 @@
 import * as path from 'path';
 import { S3Handler } from 'aws-lambda';
-import { S3 } from 'aws-sdk';
+import { S3, CloudFront } from 'aws-sdk';
 
 import { deployTrigger } from './deploy-trigger';
-import { createInvalidation, getPageInvalidationKeys } from './create-invalidation'
-
+import { generateRandomId } from './utils';
 
 export const handler: S3Handler = async function (event) {
   const s3 = new S3({ apiVersion: '2006-03-01' });
@@ -21,10 +20,16 @@ export const handler: S3Handler = async function (event) {
   console.log('triggered static deploy by buildId: ' + buildId)
 
   // Unpack the package
-  const {buildManifestContent} = await deployTrigger({
+  await deployTrigger({
     s3, sourceBucket, deployBucket, key, versionId, buildId,
   });
 
-  const invalidationKeys = getPageInvalidationKeys(buildManifestContent)
-  await createInvalidation(distributionId, invalidationKeys)
+  const cloudFront = new CloudFront({ apiVersion: '2020-05-31' });
+  await cloudFront.createInvalidation({
+    DistributionId: distributionId,
+    InvalidationBatch: {
+      CallerReference: `${new Date().getTime()}-${generateRandomId(4)}`,
+      Paths: { Quantity: 1, Items: ['/*'] }
+    }
+  }).promise()
 };
