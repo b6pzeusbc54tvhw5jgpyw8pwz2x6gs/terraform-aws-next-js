@@ -1,22 +1,12 @@
+import * as path from 'path';
 import { STATUS_CODES } from 'http';
-import {
-  CloudFrontRequestHandler,
-  CloudFrontHeaders,
-  CloudFrontRequest,
-  CloudFrontResultResponse,
-} from 'aws-lambda';
-
-import {
-  ProxyConfig,
-  HTTPHeaders,
-  ApiGatewayOriginProps,
-  RouteResult,
-} from './types';
+import { CloudFrontRequestHandler, CloudFrontHeaders, CloudFrontRequest, CloudFrontResultResponse } from 'aws-lambda';
+import { ProxyConfig, HTTPHeaders, ApiGatewayOriginProps, RouteResult } from './types';
 import { Proxy } from './proxy';
-import { fetchTimeout } from './util/fetch-timeout';
+import { fetchProxyConfigWithCache } from './util/fetch-proxy-config';
 
-let proxyConfig: ProxyConfig;
 let proxy: Proxy;
+let cachedProxyConfig: ProxyConfig
 
 function convertToCloudFrontHeaders(
   initialHeaders: CloudFrontHeaders,
@@ -31,21 +21,10 @@ function convertToCloudFrontHeaders(
   return cloudFrontHeaders;
 }
 
-async function fetchProxyConfig(endpointUri: string) {
-  // Timeout the connection before 30000ms to be able to print an error message
-  // See Lambda@Edge Limits for origin-request event here:
-  // https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-requirements-limits.html#lambda-requirements-see-limits
-  return fetchTimeout(29500, endpointUri).then(
-    (res) => res.json() as Promise<ProxyConfig>
-  );
-}
-
 /**
  * Checks if a route result issued a redirect
  */
-function isRedirect(
-  routeResult: RouteResult
-): false | CloudFrontResultResponse {
+function isRedirect(routeResult: RouteResult): false | CloudFrontResultResponse {
   if (
     routeResult.status &&
     routeResult.status >= 300 &&
@@ -104,26 +83,25 @@ function serveFromApiGateway(
 
 export const handler: CloudFrontRequestHandler = async (event) => {
   const { request } = event.Records[0].cf;
-  const configEndpoint = request.origin!.s3!.customHeaders[
-    'x-env-config-endpoint'
-  ][0].value;
-  const apiEndpoint = request.origin!.s3!.customHeaders['x-env-api-endpoint'][0]
-    .value;
+  const {customHeaders} = request.origin?.s3 || { customHeaders: {} }
+  const configEndpoint = customHeaders['x-env-config-endpoint'][0].value;
+  const apiEndpoint = customHeaders['x-env-api-endpoint'][0].value;
+  const configTTL = Number(customHeaders['x-env-config-ttl']?.[0]?.value || '60')
+
   let headers: Record<string, string> = {};
 
   try {
-    if (!proxyConfig) {
-      proxyConfig = await fetchProxyConfig(configEndpoint);
-      proxy = new Proxy(
-        proxyConfig.routes,
-        proxyConfig.lambdaRoutes,
-        proxyConfig.staticRoutes
-      );
+    const proxyConfig = await fetchProxyConfigWithCache(configEndpoint, configTTL);
+    if (cachedProxyConfig !== proxyConfig) {
+      cachedProxyConfig = proxyConfig
+      proxy = new Proxy(proxyConfig.routes, proxyConfig.lambdaRoutes, proxyConfig.staticRoutes);
     }
   } catch (err) {
     console.error('Error while initialization:', err);
     return request;
   }
+
+  const {prerenders} = cachedProxyConfig
 
   // Append query string if we have one
   // @see: https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-event-structure.html
@@ -133,9 +111,9 @@ export const handler: CloudFrontRequestHandler = async (event) => {
 
   // Check if we have a prerender route
   // Bypasses proxy
-  if (request.uri in proxyConfig.prerenders) {
+  if (request.uri in prerenders) {
     headers = serveFromApiGateway(request, apiEndpoint, {
-      path: `/${proxyConfig.prerenders[request.uri].lambda}`,
+      path: `/${prerenders[request.uri].lambda}`,
     });
   } else {
     // Handle by proxy

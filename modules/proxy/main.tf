@@ -80,7 +80,10 @@ resource "aws_cloudfront_distribution" "distribution" {
       name  = "x-env-config-endpoint"
       value = "http://${module.proxy_config.config_endpoint}"
     }
-
+    custom_header {
+      name  = "x-env-config-ttl"
+      value = var.proxy_config_ttl
+    }
     custom_header {
       name  = "x-env-api-endpoint"
       value = var.api_gateway_endpoint

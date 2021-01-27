@@ -138,6 +138,7 @@ module "proxy" {
 
   # Forwarding variables
   deployment_name                     = var.deployment_name
+  proxy_config_ttl                    = var.proxy_config_ttl
   cloudfront_price_class              = var.cloudfront_price_class
   cloudfront_origins                  = var.cloudfront_origins
   cloudfront_custom_behaviors         = var.cloudfront_custom_behaviors

@@ -111,6 +111,12 @@ variable "cloudfront_custom_behaviors" {
   default = null
 }
 
+variable "proxy_config_ttl" {
+  description = "time-to-live of proxy config in seconds."
+  type = number
+  default = 120
+}
+
 ################
 # Debug Settings
 ################

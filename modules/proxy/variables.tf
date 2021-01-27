@@ -18,6 +18,11 @@ variable "proxy_config_json" {
   type = string
 }
 
+variable "proxy_config_ttl" {
+  description = "time-to-live of proxy config in seconds."
+  type = number
+}
+
 variable "proxy_config_version" {
   type = number
 
