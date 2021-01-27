@@ -1,3 +1,4 @@
+import * as vm from 'vm'
 import { CloudFront } from 'aws-sdk';
 
 import { generateRandomId } from './utils';
@@ -51,4 +52,24 @@ export async function createInvalidation(
       console.log(err);
     }
   }
+}
+
+const convertPathToWildcard = (str: string) => {
+  return /^\[.*\]$/.test(str) ? '*' : str
+}
+
+export const getPageInvalidationKeys = (buildManifestContents: string) => {
+  const context = {self: {}} as any
+  vm.createContext(context)
+  vm.runInContext(buildManifestContents, context)  
+
+  const pagePaths = [
+    '/', '/?*',
+    ...Object.keys(context.self.__BUILD_MANIFEST)
+      .filter(p => p.startsWith('/') && p !== '/')
+      .map(p => p.split('/').map(convertPathToWildcard).join('/'))
+      .map(p => p.endsWith('*') ? p : p+'*')
+  ]
+
+  return pagePaths
 }

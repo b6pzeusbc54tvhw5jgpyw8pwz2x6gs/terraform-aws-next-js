@@ -1,12 +1,10 @@
+import * as path from 'path';
 import { S3 } from 'aws-sdk';
 import unzipper from 'unzipper';
 import { getType } from 'mime';
 
 import { deploymentConfigurationKey } from './constants';
-import { generateRandomBuildId } from './utils';
 
-// Metadata Key where the buildId is stored
-const BuildIdMetaDataKey = 'x-amz-meta-tf-next-build-id';
 // Immutable files like css, js, images with hashed file names
 const CacheControlImmutable = 'public,max-age=31536000,immutable';
 // Static pre-rendered HTML routes
@@ -22,42 +20,19 @@ interface Props {
   s3: S3;
   sourceBucket: string;
   deployBucket: string;
+  buildId: string;
   key: string;
   versionId?: string;
 }
 
 interface Response {
   files: string[];
-  buildId: string;
+  buildManifestContent: string;
 }
 
-export async function deployTrigger({
-  s3,
-  key,
-  sourceBucket,
-  deployBucket,
-  versionId,
-}: Props): Promise<Response> {
-  let buildId = '';
-  const params = {
-    Key: key,
-    Bucket: sourceBucket,
-    VersionId: versionId,
-  };
-
-  // Get the buildId from the metadata of the package
-  // If none is present, create a random id
-  const zipHeaders = await s3.headObject(params).promise();
-
-  if (zipHeaders.Metadata && BuildIdMetaDataKey in zipHeaders.Metadata) {
-    buildId = zipHeaders.Metadata[BuildIdMetaDataKey];
-  } else if (zipHeaders.ETag) {
-    // Fallback 1: If no metadata is present, use the etag
-    buildId = zipHeaders.ETag;
-  } else {
-    // Fallback 2: If no metadata or etag is present, create random id
-    buildId = generateRandomBuildId();
-  }
+export async function deployTrigger(props: Props): Promise<Response> {
+  const { s3, key, sourceBucket, deployBucket, versionId, buildId } = props
+  const params = { Key: key, Bucket: sourceBucket, VersionId: versionId };
 
   // Get the object that triggered the event
   const zip = s3
@@ -68,6 +43,7 @@ export async function deployTrigger({
   const uploads: Promise<S3.ManagedUpload.SendData>[] = [];
   // Keep track of all files that are processed
   const files: string[] = [];
+  let buildManifestContent = ''
 
   for await (const e of zip) {
     const entry = e as unzipper.Entry;
@@ -80,15 +56,24 @@ export async function deployTrigger({
       // files without extension get HTML mime type as fallback
       const ContentType = getType(fileName) || 'text/html';
 
+      let buffer: Buffer | null = null
+      if (fileName === `_next/static/${buildId}/_buildManifest.js`) {
+        buffer = await entry.buffer()
+        buildManifestContent = buffer.toString()
+      }
+ 
+      const Key = fileName.startsWith('_next/static/')
+        ? path.join(`static`,buildId,fileName)
+        : path.join(buildId, fileName)
+
       const uploadParams: S3.Types.PutObjectRequest = {
         Bucket: deployBucket,
-        Key: fileName,
-        Body: entry,
+        Key,
+        Body: buffer || entry,
         ContentType,
-        CacheControl:
-          ContentType === 'text/html'
-            ? CacheControlStaticHtml
-            : CacheControlImmutable,
+        CacheControl: ContentType === 'text/html'
+          ? CacheControlStaticHtml
+          : CacheControlImmutable,
       };
 
       // Sorry, but you cannot override the manifest
@@ -106,8 +91,5 @@ export async function deployTrigger({
   // Cleanup
   await s3.deleteObject(params).promise();
 
-  return {
-    files,
-    buildId,
-  };
+  return { files, buildManifestContent };
 }

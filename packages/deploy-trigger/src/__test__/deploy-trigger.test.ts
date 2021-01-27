@@ -54,14 +54,14 @@ describe('deploy-trigger', () => {
         .promise();
 
       // Run deployTrigger
-      const { buildId, files } = await deployTrigger({
+      const { files } = await deployTrigger({
         s3,
+        buildId: 'deafult',
         sourceBucket: sourceBucket.bucketName,
         deployBucket: targetBucket.bucketName,
         key: packageKey,
       });
 
-      expect(buildId).toBeDefined();
       expect(files.length).toBe(packageContent.length);
 
       // Check targetBucket

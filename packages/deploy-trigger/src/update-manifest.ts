@@ -1,3 +1,4 @@
+import * as path from 'path';
 import { S3 } from 'aws-sdk';
 
 import { expireTagKey, expireTagValue } from './constants';
@@ -88,12 +89,12 @@ async function deleteFiles(s3: S3, bucketId: string, files: string[]) {
   }
 }
 
-function getInvalidationKeys(files: Set<string>) {
+export function getInvalidationKeys(files: Set<string>) {
   const invalidations: string[] = [];
 
   for (const file of files) {
     // Skip static assets files with hashes
-    if (file.startsWith('_next')) {
+    if (file.startsWith('_next/')) {
       continue;
     }
 
@@ -144,15 +145,9 @@ interface Response {
  *
  * It returns an array of keys that should be expired
  */
-export async function updateManifest({
-  files,
-  buildId,
-  s3,
-  deploymentConfigurationKey,
-  expireAfterDays,
-  bucket,
-  manifest,
-}: Props): Promise<Response> {
+export async function updateManifest(props: Props): Promise<Response> {
+  const { files, buildId, s3, deploymentConfigurationKey} = props
+  const {expireAfterDays, bucket, manifest } = props
   const expire: string[] = [];
   const deleted: string[] = [];
   const restore: string[] = [];
@@ -247,7 +242,7 @@ export async function updateManifest({
   await s3
     .putObject({
       Bucket: bucket,
-      Key: deploymentConfigurationKey,
+      Key: path.join(buildId, deploymentConfigurationKey),
       Body: JSON.stringify(newManifest),
     })
     .promise();
