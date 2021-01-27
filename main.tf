@@ -15,7 +15,9 @@ locals {
     ]
   ])
   prerenders_json = lookup(local.config_file, "prerenders", {})
+  buildId         = lookup(local.config_file, "buildId")
   proxy_config_json = jsonencode({
+    buildId      = local.buildId
     routes       = local.routes_json
     staticRoutes = local.static_routes_json
     lambdaRoutes = local.lambda_routes_json
@@ -23,12 +25,13 @@ locals {
   })
 }
 
-# Generates for each function a unique function name
-resource "random_id" "function_name" {
-  for_each = local.lambdas
-
-  prefix      = "${each.key}-"
+resource "random_id" "suffix" {
   byte_length = 4
+}
+
+resource "aws_s3_bucket" "log_bucket" {
+  bucket = "${var.name_prefix}-log-${random_id.suffix.hex}"
+  acl    = "log-delivery-write"
 }
 
 #########
@@ -39,9 +42,11 @@ resource "random_id" "function_name" {
 module "statics_deploy" {
   source = "./modules/statics-deploy"
 
+  name_prefix              = var.name_prefix
+  build_id                 = local.buildId
   static_files_archive     = local.static_files_archive
   expire_static_assets     = var.expire_static_assets
-  debug_use_local_packages = var.debug_use_local_packages
+  package_abs_path         = var.static_deploy_package_abs_path
   cloudfront_id            = module.proxy.cloudfront_id
   cloudfront_arn           = module.proxy.cloudfront_arn
   tags                     = var.tags
@@ -53,9 +58,9 @@ module "statics_deploy" {
 resource "aws_lambda_function" "this" {
   for_each = local.lambdas
 
-  function_name = random_id.function_name[each.key].hex
+  function_name = each.key  # function name should contain buildId
   description   = "Managed by Terraform-next.js"
-  role          = aws_iam_role.lambda[each.key].arn
+  role          = aws_iam_role.lambda.arn
   handler       = lookup(each.value, "handler", "")
   runtime       = lookup(each.value, "runtime", var.lambda_runtime)
   memory_size   = lookup(each.value, "memory", var.lambda_memory_size)
@@ -82,7 +87,7 @@ resource "aws_lambda_permission" "current_version_triggers" {
 
   statement_id  = "AllowInvokeFromApiGateway"
   action        = "lambda:InvokeFunction"
-  function_name = random_id.function_name[each.key].hex
+  function_name = each.key
   principal     = "apigateway.amazonaws.com"
 
   source_arn = "${module.api_gateway.this_apigatewayv2_api_execution_arn}/*/*/*"
@@ -135,8 +140,11 @@ module "proxy" {
   static_bucket_access_identity = module.statics_deploy.static_bucket_access_identity
   proxy_config_json             = local.proxy_config_json
   proxy_config_version          = local.config_file_version
+  log_bucket_domain_name        = aws_s3_bucket.log_bucket.bucket_domain_name
 
   # Forwarding variables
+  name_prefix                         = var.name_prefix
+  package_abs_path                    = var.proxy_package_abs_path
   deployment_name                     = var.deployment_name
   proxy_config_ttl                    = var.proxy_config_ttl
   cloudfront_price_class              = var.cloudfront_price_class
@@ -145,7 +153,6 @@ module "proxy" {
   cloudfront_alias_domains            = var.domain_names
   cloudfront_viewer_certificate_arn   = var.cloudfront_viewer_certificate_arn
   cloudfront_minimum_protocol_version = var.cloudfront_minimum_protocol_version
-  debug_use_local_packages            = var.debug_use_local_packages
   tags                                = var.tags
   lambda_role_permissions_boundary    = var.lambda_role_permissions_boundary
 

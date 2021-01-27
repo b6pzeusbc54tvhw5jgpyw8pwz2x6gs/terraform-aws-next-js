@@ -58,7 +58,7 @@ resource "aws_cloudfront_origin_access_identity" "this" {
 resource "aws_cloudfront_distribution" "distribution" {
   enabled         = true
   is_ipv6_enabled = true
-  comment         = "${var.deployment_name} - Proxy-Config"
+  comment         = "${var.name_prefix} ${var.deployment_name} - Proxy-Config"
   price_class     = var.cloudfront_price_class
   tags            = var.tags
 

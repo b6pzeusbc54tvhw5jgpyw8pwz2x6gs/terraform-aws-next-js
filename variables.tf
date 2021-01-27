@@ -4,6 +4,11 @@ variable "next_tf_dir" {
   default     = "./.next-tf"
 }
 
+variable "name_prefix" {
+  description = "Identifier for the deployment group (Added to resource name)."
+  type        = string
+}
+
 variable "deployment_name" {
   description = "Identifier for the deployment group (Added to Comments)."
   type        = string
@@ -121,8 +126,13 @@ variable "proxy_config_ttl" {
 # Debug Settings
 ################
 
-variable "debug_use_local_packages" {
-  description = "Use locally built packages rather than download them from npm."
-  type        = bool
-  default     = false
+variable "static_deploy_package_abs_path" {
+  description = "Use locally built packages rather than download them from npm for static deploy."
+  type = string
+  default = ""
+}
+variable "proxy_package_abs_path" {
+  description = "Use locally built packages rather than download them from npm for proxy."
+  type = string
+  default = ""
 }

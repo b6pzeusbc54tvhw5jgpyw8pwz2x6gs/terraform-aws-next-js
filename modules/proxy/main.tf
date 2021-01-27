@@ -2,15 +2,20 @@ locals {
   origin_id_static_deployment = "S3 Static Deployment"
 }
 
+data "aws_caller_identity" "current" {}
+
+/*
+// TODO: add create=boolean option into dealmore/download/npm
 module "proxy_package" {
   source  = "dealmore/download/npm"
   version = "1.0.0"
 
+  create         = var.package_abs_path != ""
   module_name    = "@dealmore/terraform-next-proxy"
   module_version = var.proxy_module_version
   path_to_file   = "dist.zip"
-  use_local      = var.debug_use_local_packages
 }
+*/
 
 ##############
 # Proxy Config
@@ -19,9 +24,11 @@ module "proxy_package" {
 module "proxy_config" {
   source = "../proxy-config"
 
+  name_prefix            = var.name_prefix
   cloudfront_price_class = var.cloudfront_price_class
   proxy_config_json      = var.proxy_config_json
   deployment_name        = var.deployment_name
+  log_bucket_domain_name = var.log_bucket_domain_name
   tags                   = var.tags
 }
 
@@ -30,7 +37,6 @@ module "proxy_config" {
 #############
 
 resource "random_id" "function_name" {
-  prefix      = "next-tf-proxy-"
   byte_length = 4
 }
 
@@ -40,32 +46,58 @@ module "edge_proxy" {
 
   lambda_at_edge = true
 
-  function_name = random_id.function_name.hex
+  function_name = "${var.name_prefix}-edge-proxy-${random_id.function_name.hex}"
   description   = "Managed by Terraform-next.js"
   handler       = "handler.handler"
   runtime       = var.lambda_default_runtime
   role_permissions_boundary = var.lambda_role_permissions_boundary
 
   create_package         = false
-  local_existing_package = module.proxy_package.abs_path
+  # local_existing_package = var.package_abs_path ? var.package_abs_path : module.proxy_package.abs_path
+  local_existing_package = var.package_abs_path
 
   cloudwatch_logs_retention_in_days = 30
 
   tags          = var.tags
 }
 
+resource "aws_iam_role_policy" "lambda_edge_create_log_group" {
+  name = "${var.name_prefix}-proxy-lambda-edge-additional-permission"
+  role = module.edge_proxy.lambda_role_name
+  policy = <<-EOF
+  {
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Effect": "Allow",
+        "Action": ["logs:CreateLogGroup"],
+        "Resource": [
+          "arn:aws:logs:*:${data.aws_caller_identity.current.account_id}:log-group:*"
+        ]
+      }
+    ]
+  }
+  EOF
+}
+
+
 ############
 # CloudFront
 ############
-
 resource "aws_cloudfront_distribution" "distribution" {
   enabled         = true
   is_ipv6_enabled = true
-  comment         = "${var.deployment_name} - Main"
+  comment         = "${var.name_prefix} ${var.deployment_name} - Main"
   price_class     = var.cloudfront_price_class
   aliases         = var.cloudfront_alias_domains
   default_root_object = "index"
   tags            = var.tags
+
+  logging_config {
+    include_cookies = false
+    bucket          = var.log_bucket_domain_name
+    prefix          = "${var.name_prefix}-cloudfront-proxy-main"
+  }
 
   # Static deployment S3 bucket
   origin {
@@ -171,7 +203,7 @@ resource "aws_cloudfront_distribution" "distribution" {
 
   # Next.js static assets
   ordered_cache_behavior {
-    path_pattern     = "/_next/static/*"
+    path_pattern     = "/static/*"  # /static/${buildId}/_next/static/*
     allowed_methods  = ["GET", "HEAD"]
     cached_methods   = ["GET", "HEAD"]
     target_origin_id = local.origin_id_static_deployment
@@ -196,8 +228,8 @@ resource "aws_cloudfront_distribution" "distribution" {
   custom_error_response {
     error_caching_min_ttl = 60
     error_code            = 403
-    response_code         = 404
-    response_page_path    = "/404"
+    # response_code         = 404
+    # response_page_path    = "/404"  # It should be handle as `${buildId}/404` at proxy edge lambda
   }
 
   viewer_certificate {

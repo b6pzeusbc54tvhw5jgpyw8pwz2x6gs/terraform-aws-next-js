@@ -1,4 +1,17 @@
+variable "name_prefix" {
+  type = string
+}
+
 variable "api_gateway_endpoint" {
+  type = string
+}
+
+variable "package_abs_path" {
+  type = string
+  default = ""
+}
+
+variable "log_bucket_domain_name" {
   type = string
 }
 
@@ -35,11 +48,6 @@ variable "proxy_config_version" {
 variable "proxy_module_version" {
   type    = string
   default = "0.4.0"
-}
-
-variable "debug_use_local_packages" {
-  type    = bool
-  default = false
 }
 
 variable "lambda_default_runtime" {

@@ -101,7 +101,7 @@ export const handler: CloudFrontRequestHandler = async (event) => {
     return request;
   }
 
-  const {prerenders} = cachedProxyConfig
+  const {prerenders, buildId} = cachedProxyConfig
 
   // Append query string if we have one
   // @see: https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-event-structure.html
@@ -136,11 +136,14 @@ export const handler: CloudFrontRequestHandler = async (event) => {
         : '';
     } else if (proxyResult.phase === 'error' && proxyResult.status === 404) {
       // Send 404 directly to S3 bucket for handling without rewrite
-      return request;
+      return {
+        ...request,
+        uri: path.join(`/${buildId}`, proxyResult.dest),
+      }
     } else {
       // Route is served by S3 bucket
       if (proxyResult.found) {
-        request.uri = proxyResult.dest;
+        request.uri = path.join(`/${buildId}`, proxyResult.dest);
       }
     }
 

@@ -11,7 +11,7 @@ locals {
 ########################
 
 resource "aws_s3_bucket" "static_upload" {
-  bucket_prefix = "next-tf-deploy-source"
+  bucket_prefix = "${var.name_prefix}-deploy-source-"
   acl           = "private"
   force_destroy = true
   tags          = var.tags
@@ -30,7 +30,7 @@ data "aws_iam_policy_document" "access_static_upload" {
 }
 
 resource "aws_iam_policy" "access_static_upload" {
-  name_prefix = "next-tf"
+  name_prefix = var.name_prefix
   description = "S3 access for ${aws_s3_bucket.static_upload.id} bucket"
 
   policy = data.aws_iam_policy_document.access_static_upload.json
@@ -50,7 +50,7 @@ resource "aws_s3_bucket_notification" "on_create" {
 #########################
 
 resource "aws_s3_bucket" "static_deploy" {
-  bucket_prefix = "next-tf-static-deploy"
+  bucket_prefix = "${var.name_prefix}-static-deploy-"
   acl           = "private"
   force_destroy = true
   tags          = var.tags
@@ -132,7 +132,7 @@ data "aws_iam_policy_document" "access_static_deploy" {
 }
 
 resource "aws_iam_policy" "access_static_deploy" {
-  name_prefix = "next-tf"
+  name_prefix = var.name_prefix
   description = "S3 access for ${aws_s3_bucket.static_deploy.id} bucket"
 
   policy = data.aws_iam_policy_document.access_static_deploy.json
@@ -142,18 +142,22 @@ resource "aws_iam_policy" "access_static_deploy" {
 # Lambda
 ########
 
+/*
+// TODO: add create=boolean option into dealmore/download/npm
 module "lambda_content" {
   source  = "dealmore/download/npm"
   version = "1.0.0"
 
+  create         = var.package_abs_path != ""
   module_name    = "@dealmore/terraform-next-deploy-trigger"
   module_version = var.deploy_trigger_module_version
   path_to_file   = "dist.zip"
   use_local      = var.debug_use_local_packages
 }
+*/
 
 resource "random_id" "function_name" {
-  prefix      = "next-tf-deploy-"
+  prefix      = "${var.name_prefix}-deploy-"
   byte_length = 4
 }
 
@@ -172,7 +176,9 @@ module "deploy_trigger" {
   role_permissions_boundary = var.lambda_role_permissions_boundary
 
   create_package         = false
-  local_existing_package = module.lambda_content.abs_path
+
+  # local_existing_package = var.package_abs_path ? var.package_abs_path : module.lambda_content.abs_path
+  local_existing_package = var.package_abs_path
 
   # Prevent running concurrently
   reserved_concurrent_executions = 1
@@ -208,7 +214,7 @@ resource "null_resource" "static_s3_upload" {
   }
 
   provisioner "local-exec" {
-    command     = "./s3-put -r ${aws_s3_bucket.static_upload.region} -T ${abspath(var.static_files_archive)} /${aws_s3_bucket.static_upload.id}/${basename(var.static_files_archive)}"
+    command     = "./s3-put -r ${aws_s3_bucket.static_upload.region} -T ${abspath(var.static_files_archive)} /${aws_s3_bucket.static_upload.id}/${var.build_id}/${basename(var.static_files_archive)}"
     working_dir = "${path.module}/s3-bash4/bin"
   }
 

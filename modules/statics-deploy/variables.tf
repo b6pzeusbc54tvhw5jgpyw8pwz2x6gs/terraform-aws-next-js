@@ -1,10 +1,18 @@
+variable "name_prefix" {
+  type = string
+}
+
+variable "build_id" {
+  type = string
+}
+
 variable "static_files_archive" {
   type = string
 }
 
-variable "debug_use_local_packages" {
-  type    = bool
-  default = false
+variable "package_abs_path" {
+  type = string
+  default = ""
 }
 
 variable "deploy_trigger_module_version" {

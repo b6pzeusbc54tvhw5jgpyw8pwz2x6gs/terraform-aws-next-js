@@ -4,6 +4,7 @@ import { Route, HandleValue } from '@vercel/routing-utils';
 export type HTTPHeaders = Record<string, string>;
 
 export interface ProxyConfig {
+  buildId: string;
   routes: Route[];
   lambdaRoutes: string[];
   staticRoutes: string[];
