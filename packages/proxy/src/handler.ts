@@ -67,7 +67,7 @@ function serveFromApiGateway(
       domainName: apiEndpoint,
       path,
       customHeaders: {},
-      keepaliveTimeout: 5,
+      keepaliveTimeout: 60,
       port: 443,
       protocol: 'https',
       readTimeout: 30,
