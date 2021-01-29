@@ -1,9 +1,21 @@
 import * as React from 'react';
 import Link from 'next/Link';
 
+/** @jsxRuntime classic */
+/** @jsx jsx */
+import { css, jsx } from '@emotion/react'
+
+const cssHeader = () => css`
+  background-color: rgb(171, 174, 213);
+  height: 48px;
+  padding: 0px;
+  margin: 0px;
+  font-size: 18px;
+`
+
 export const Header = () => {
   return (
-    <header>
+    <header css={cssHeader}>
       <nav>
         <Link href="/">
           <a>Index</a>

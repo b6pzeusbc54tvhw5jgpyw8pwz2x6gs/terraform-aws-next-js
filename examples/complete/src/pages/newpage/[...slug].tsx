@@ -4,8 +4,6 @@ import { GetServerSideProps, NextPage } from 'next'
 import { useRouter } from 'next/router';
 import Link from 'next/Link';
 
-import { Header } from '../../components/Header';
-
 interface Props {
   initialPropsCounter: number
   slug: string[] | string
@@ -45,8 +43,6 @@ const NewPage: NextPage<Props> = (props) => {
 
   return (
     <div>
-      <Header />
-
       <h2>This is the Home Page</h2>
       <Link href="/about">
         <a>About</a>

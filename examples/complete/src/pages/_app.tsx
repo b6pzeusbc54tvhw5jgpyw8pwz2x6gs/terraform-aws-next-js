@@ -1,8 +1,30 @@
 // import App from "next/app";
 import type { AppProps /*, AppContext */ } from 'next/app'
+import Head from 'next/head'
+import { Global, css } from '@emotion/react'
+import { Header } from '../components/Header'
+
+const cssGlobalStyles = css`
+  body {
+    margin: 0px;
+    padding: 0px;
+  }
+`
+
+const GlobalStyles = () => <Global styles={cssGlobalStyles}/>
 
 function MyApp({ Component, pageProps }: AppProps) {
-  return <Component {...pageProps} />
+  return (
+    <>
+      <GlobalStyles/>
+      <Head>
+        <title>Create Next App</title>
+        <link rel="icon" href="/favicon.ico" />
+      </Head>
+      <Header/>
+      <Component {...pageProps} />
+    </>
+  )
 }
 
 // Only uncomment this method if you have blocking data requirements for

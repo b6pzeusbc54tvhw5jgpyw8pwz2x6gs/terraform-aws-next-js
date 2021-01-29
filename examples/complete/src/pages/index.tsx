@@ -1,9 +1,7 @@
 import { format } from 'url';
-import { useRouter } from 'next/router';
 import { GetServerSideProps, NextPage } from 'next'
+import { useRouter } from 'next/router';
 import Link from 'next/Link'
-
-import { Header } from '../components/Header';
 
 interface Props {
   initialPropsCounter: number
@@ -33,8 +31,6 @@ const Index: NextPage<Props> = (props) => {  const router = useRouter();
 
   return (
     <div>
-      <Header />
-
       <h2>This is the Home Page</h2>
 
       <button onClick={reload}>Reload</button>
