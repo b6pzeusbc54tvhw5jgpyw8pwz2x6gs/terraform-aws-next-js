@@ -37,10 +37,10 @@ const backupConfig = (buildDir: string) => {
   fs.copyFileSync(source, target)
 }
 
-const injectBuildIdConfigJson = (config: string, buildId: string) => {
+const replaceWithLambdaFunctionName = (config: string, lambdaSuffix: string) => {
   const modified = config
-    .replace(/__NEXT_API_LAMBDA_0/g, getRouteName(buildId, 'API'))
-    .replace(/__NEXT_PAGE_LAMBDA_0/g,getRouteName(buildId, 'PAGE'))
+    .replace(/__NEXT_API_LAMBDA_0/g, getLambdaFunctionName(lambdaSuffix, 'API'))
+    .replace(/__NEXT_PAGE_LAMBDA_0/g,getLambdaFunctionName(lambdaSuffix, 'PAGE'))
 
   return modified
 }
@@ -63,14 +63,20 @@ const renameLambdaZipFiles = (buildId: string, buildDir: string) => {
   }
 }
 
-const replaceLambdaFunctionName = (modifiedConfig: string, lambdaSuffix: string) => {
+const replaceLambdaFunctionName = (modifiedConfig: string, buildId: string) => {
   const configJson = JSON.parse(modifiedConfig)
   const modified = {
     ...configJson,
     lambdas: {
-      [getLambdaFunctionName(lambdaSuffix, 'API')]: configJson.lambdas.__NEXT_API_LAMBDA_0,
-      [getLambdaFunctionName(lambdaSuffix, 'PAGE')]: configJson.lambdas.__NEXT_PAGE_LAMBDA_0,
-    }
+      __NEXT_API_LAMBDA_0: {
+        ...configJson.lambdas.__NEXT_API_LAMBDA_0,
+        filename: `lambdas/${getRouteName(buildId,'API')}.zip`
+      },
+      __NEXT_PAGE_LAMBDA_0: {
+        ...configJson.lambdas.__NEXT_PAGE_LAMBDA_0,
+        filename: `lambdas/${getRouteName(buildId,'PAGE')}.zip`,
+      },
+    },
   }
   return JSON.stringify(modified,null,2)
 }
@@ -79,9 +85,9 @@ const run = () => {
   const buildDir = path.join(cwd, '.next-tf')
   const buildId = getBuildId(buildDir)
   backupConfig(buildDir)
-  const config = getConfigFile(buildDir)
-  let modifiedConfig = replaceLambdaFunctionName(config, revisionOrTag)
-  modifiedConfig = injectBuildIdConfigJson(modifiedConfig, buildId)
+  let modifiedConfig = getConfigFile(buildDir)
+  modifiedConfig = replaceLambdaFunctionName(modifiedConfig, buildId)
+  modifiedConfig = replaceWithLambdaFunctionName(modifiedConfig, revisionOrTag)
 
   fs.writeFileSync(path.join(buildDir, 'config.json'), modifiedConfig)
   renameLambdaZipFiles(buildId, buildDir)
