@@ -54,7 +54,7 @@ data "aws_iam_policy_document" "lambda_logging" {
 }
 
 resource "aws_iam_policy" "lambda_logging" {
-  description = "Managed by Terraform Next.js"
+  description = "${var.name_prefix} Managed by Terraform Next.js"
 
   policy = data.aws_iam_policy_document.lambda_logging.json
 }
@@ -71,7 +71,7 @@ resource "aws_iam_role_policy_attachment" "lambda_logs" {
 resource "aws_iam_policy" "additional_json" {
   count = var.lambda_policy_json != null ? 1 : 0
 
-  description = "Managed by Terraform Next.js"
+  description = "${var.name_prefix} Managed by Terraform Next.js"
   policy      = var.lambda_policy_json
 }
 

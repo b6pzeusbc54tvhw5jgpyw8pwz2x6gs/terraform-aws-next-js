@@ -156,16 +156,11 @@ module "lambda_content" {
 }
 */
 
-resource "random_id" "function_name" {
-  prefix      = "${var.name_prefix}-deploy-"
-  byte_length = 4
-}
-
 module "deploy_trigger" {
   source  = "terraform-aws-modules/lambda/aws"
   version = "1.34.0"
 
-  function_name = random_id.function_name.hex
+  function_name = "${var.name_prefix}-deploy-${var.name_suffix}"
   description   = "Managed by Terraform-next.js"
   handler       = "handler.handler"
   runtime       = "nodejs12.x"

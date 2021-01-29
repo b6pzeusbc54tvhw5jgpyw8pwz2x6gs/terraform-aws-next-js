@@ -118,7 +118,7 @@ resource "aws_cloudfront_distribution" "distribution" {
     }
     custom_header {
       name  = "x-env-api-endpoint"
-      value = var.api_gateway_endpoint
+      value = var.ssr_server_domain_name
     }
   }
 

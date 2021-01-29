@@ -42,8 +42,9 @@ resource "aws_s3_bucket" "log_bucket" {
 module "statics_deploy" {
   source = "./modules/statics-deploy"
 
-  name_prefix              = var.name_prefix
   build_id                 = local.buildId
+  name_prefix              = var.name_prefix
+  name_suffix              = random_id.suffix.hex
   static_files_archive     = local.static_files_archive
   expire_static_assets     = var.expire_static_assets
   package_abs_path         = var.static_deploy_package_abs_path
@@ -115,10 +116,10 @@ locals {
 
 module "api_gateway" {
   source  = "terraform-aws-modules/apigateway-v2/aws"
-  version = "0.5.0"
+  version = "0.8.0"
 
-  name          = var.deployment_name
-  description   = "Managed by Terraform-next.js"
+  name          = "${var.name_prefix}-${random_id.suffix.hex}"
+  description   = "${var.name_prefix} Managed by Terraform-next.js"
   protocol_type = "HTTP"
 
   create_api_domain_name = false
@@ -128,6 +129,53 @@ module "api_gateway" {
   tags = var.tags
 }
 
+#########################################
+# Cloudfront for accelerating Api-Gateway
+#########################################
+
+module "ssr_cf" {
+  source = "terraform-aws-modules/cloudfront/aws"
+
+  comment             = "${var.name_prefix} Nextjs SSR"
+  enabled             = true
+  is_ipv6_enabled     = true
+  price_class         = "PriceClass_All"
+  retain_on_delete    = false
+  wait_for_deployment = true
+
+  create_origin_access_identity = false
+  logging_config = {
+    include_cookies = false
+    bucket = aws_s3_bucket.log_bucket.bucket_domain_name
+    prefix = "${var.name_prefix}-cloudfront-ssr"
+  }
+
+  origin = {
+    ssr-api-gateway = {
+      domain_name = trimprefix(module.api_gateway.this_apigatewayv2_api_api_endpoint, "https://")
+      custom_origin_config = {
+        http_port              = 80
+        https_port             = 443
+        origin_protocol_policy = "match-viewer"
+        origin_ssl_protocols   = ["TLSv1.2"]
+        origin_keepalive_timeout = 60
+        origin_read_timeout      = 5
+      }
+    }
+  }
+
+  default_cache_behavior = {
+    target_origin_id       = "ssr-api-gateway"
+    viewer_protocol_policy = "allow-all"
+
+    allowed_methods = ["GET", "HEAD", "OPTIONS"]
+    cached_methods  = ["GET", "HEAD"]
+    compress        = true
+    query_string    = true
+  }
+}
+
+
 #######
 # Proxy
 #######
@@ -135,7 +183,7 @@ module "api_gateway" {
 module "proxy" {
   source = "./modules/proxy"
 
-  api_gateway_endpoint          = trimprefix(module.api_gateway.this_apigatewayv2_api_api_endpoint, "https://")
+  ssr_server_domain_name        = module.ssr_cf.this_cloudfront_distribution_domain_name
   static_bucket_endpoint        = module.statics_deploy.static_bucket_endpoint
   static_bucket_access_identity = module.statics_deploy.static_bucket_access_identity
   proxy_config_json             = local.proxy_config_json

@@ -2,7 +2,7 @@ variable "name_prefix" {
   type = string
 }
 
-variable "api_gateway_endpoint" {
+variable "ssr_server_domain_name" {
   type = string
 }
 
