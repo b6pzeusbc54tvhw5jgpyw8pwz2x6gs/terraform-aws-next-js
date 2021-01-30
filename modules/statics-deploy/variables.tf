@@ -21,7 +21,7 @@ variable "package_abs_path" {
 
 variable "deploy_trigger_module_version" {
   type    = string
-  default = "0.1.0"
+  default = "0.2.0"
 }
 
 variable "expire_static_assets" {
