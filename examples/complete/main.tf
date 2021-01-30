@@ -21,6 +21,12 @@ module "tf-next" {
   source = "../../"
   static_deploy_package_abs_path = abspath("../../packages/deploy-trigger/dist.zip")
   proxy_package_abs_path         = abspath("../../packages/proxy/dist.zip")
+
+  cloudfront_query_string              = true
+  cloudfront_query_string_cache_keys   = null
+  cloudfront_headers                   = null
+  cloudfront_cookies_forward           = "whitelist"
+  cloudfront_cookies_whitelisted_names = ["locale"]
 }
 
 output "domain" {

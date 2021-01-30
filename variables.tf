@@ -116,6 +116,27 @@ variable "cloudfront_custom_behaviors" {
   default = null
 }
 
+variable "cloudfront_query_string" {
+  type    = bool
+  default = false
+}
+variable "cloudfront_query_string_cache_keys" {
+  type    = list(string)
+  default = []
+}
+variable "cloudfront_headers" {
+  type    = list(string)
+  default = null
+}
+variable "cloudfront_cookies_forward" {
+  type    = string
+  default = "none"
+}
+variable "cloudfront_cookies_whitelisted_names" {
+  type    = list(string)
+  default = null
+}
+
 variable "proxy_config_ttl" {
   description = "time-to-live of proxy config in seconds."
   type = number

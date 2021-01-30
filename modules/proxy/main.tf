@@ -155,12 +155,16 @@ resource "aws_cloudfront_distribution" "distribution" {
     allowed_methods  = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
     cached_methods   = ["GET", "HEAD"]
     target_origin_id = local.origin_id_static_deployment
+    min_ttl                = 0
+    default_ttl            = 0
+    max_ttl                = 3600
 
     forwarded_values {
-      query_string = true
-
+      query_string              = var.cloudfront_query_string
+      query_string_cache_keys   = var.cloudfront_query_string_cache_keys
       cookies {
-        forward = "all"
+        forward           = var.cloudfront_cookies_forward
+        whitelisted_names = var.cloudfront_cookies_whitelisted_names
       }
     }
 

@@ -172,6 +172,15 @@ module "ssr_cf" {
     cached_methods  = ["GET", "HEAD"]
     compress        = true
     query_string    = true
+    min_ttl         = 0
+    default_ttl     = 0
+    max_ttl         = 86400
+
+    query_string              = var.cloudfront_query_string
+    query_string_cache_keys   = var.cloudfront_query_string_cache_keys
+    headers                   = var.cloudfront_headers
+    cookies_forward           = var.cloudfront_cookies_forward
+    cookies_whitelisted_names = var.cloudfront_cookies_whitelisted_names
   }
 }
 
@@ -191,18 +200,23 @@ module "proxy" {
   log_bucket_domain_name        = aws_s3_bucket.log_bucket.bucket_domain_name
 
   # Forwarding variables
-  name_prefix                         = var.name_prefix
-  package_abs_path                    = var.proxy_package_abs_path
-  deployment_name                     = var.deployment_name
-  proxy_config_ttl                    = var.proxy_config_ttl
-  cloudfront_price_class              = var.cloudfront_price_class
-  cloudfront_origins                  = var.cloudfront_origins
-  cloudfront_custom_behaviors         = var.cloudfront_custom_behaviors
-  cloudfront_alias_domains            = var.domain_names
-  cloudfront_viewer_certificate_arn   = var.cloudfront_viewer_certificate_arn
-  cloudfront_minimum_protocol_version = var.cloudfront_minimum_protocol_version
-  tags                                = var.tags
-  lambda_role_permissions_boundary    = var.lambda_role_permissions_boundary
+  name_prefix                          = var.name_prefix
+  package_abs_path                     = var.proxy_package_abs_path
+  deployment_name                      = var.deployment_name
+  proxy_config_ttl                     = var.proxy_config_ttl
+  cloudfront_price_class               = var.cloudfront_price_class
+  cloudfront_origins                   = var.cloudfront_origins
+  cloudfront_custom_behaviors          = var.cloudfront_custom_behaviors
+  cloudfront_alias_domains             = var.domain_names
+  cloudfront_viewer_certificate_arn    = var.cloudfront_viewer_certificate_arn
+  cloudfront_minimum_protocol_version  = var.cloudfront_minimum_protocol_version
+  tags                                 = var.tags
+  lambda_role_permissions_boundary     = var.lambda_role_permissions_boundary
+  cloudfront_query_string              = var.cloudfront_query_string
+  cloudfront_query_string_cache_keys   = var.cloudfront_query_string_cache_keys
+  cloudfront_headers                   = var.cloudfront_headers
+  cloudfront_cookies_forward           = var.cloudfront_cookies_forward
+  cloudfront_cookies_whitelisted_names = var.cloudfront_cookies_whitelisted_names
 
   providers = {
     aws = aws.global_region

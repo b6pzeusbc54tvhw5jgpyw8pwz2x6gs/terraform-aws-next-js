@@ -83,6 +83,27 @@ variable "cloudfront_minimum_protocol_version" {
   type = string
 }
 
+variable "cloudfront_cookies_forward" {
+  type    = string
+  default = "none"
+}
+variable "cloudfront_cookies_whitelisted_names" {
+  type    = list(string)
+  default = null
+}
+variable "cloudfront_query_string" {
+  type    = bool
+  default = false
+}
+variable "cloudfront_query_string_cache_keys" {
+  type    = list(string)
+  default = []
+}
+variable "cloudfront_headers" {
+  type    = list(string)
+  default = null
+}
+
 variable "tags" {
   type    = map(string)
   default = {}
