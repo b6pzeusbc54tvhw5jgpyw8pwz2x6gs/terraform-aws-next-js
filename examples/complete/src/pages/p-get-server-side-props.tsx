@@ -1,13 +1,16 @@
 import Link from 'next/Link'
 import { GetServerSideProps } from 'next'
 import styles from '../styles/Home.module.css'
+import { useContext } from 'react'
+import { NLSContext } from '../nls'
 
 export default function PageWithGetStaticProps() {
+  const {messages:m} = useContext(NLSContext)
   return (
     <div>
       <main className={styles.main}>
         <h1 className={styles.title}>
-          Welcome to <a href="https://nextjs.org">Next.js!</a>
+          {m.hello} <a href="https://nextjs.org">Next.js!</a>
         </h1>
 
         <p className={styles.description}>

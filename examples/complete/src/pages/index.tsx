@@ -2,6 +2,8 @@ import { format } from 'url';
 import { GetServerSideProps, NextPage } from 'next'
 import { useRouter } from 'next/router';
 import Link from 'next/Link'
+import { useContext } from 'react'
+import { NLSContext } from '../nls'
 
 interface Props {
   initialPropsCounter: number
@@ -15,9 +17,11 @@ export const getServerSideProps: GetServerSideProps = async (ctx) => {
   return { props: { initialPropsCounter: counter } };
 }
 
-const Index: NextPage<Props> = (props) => {  const router = useRouter();
+const Index: NextPage<Props> = (props) => {
+  const router = useRouter();
   const {initialPropsCounter} = props
   const { pathname, query } = router;
+  const {messages:m} = useContext(NLSContext)
   const reload = () => {
     router.push(format({ pathname, query }));
   };
@@ -31,7 +35,7 @@ const Index: NextPage<Props> = (props) => {  const router = useRouter();
 
   return (
     <div>
-      <h2>This is the Home Page</h2>
+      <h2>{m.hello} This is the Home Page</h2>
 
       <button onClick={reload}>Reload</button>
       <button onClick={incrementCounter}>Change State Counter</button>

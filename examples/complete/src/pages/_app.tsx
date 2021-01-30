@@ -1,8 +1,14 @@
 // import App from "next/app";
-import type { AppProps /*, AppContext */ } from 'next/app'
+import type { AppProps, AppContext } from 'next/app'
+import App from 'next/app'
 import Head from 'next/head'
+import cookie from 'cookie'
 import { Global, css } from '@emotion/react'
 import { Header } from '../components/Header'
+import { NLS } from '../types'
+import { NLSContext } from '../nls'
+import { useEffect } from 'react'
+import { NextPageContext } from 'next'
 
 const cssGlobalStyles = css`
   body {
@@ -13,9 +19,17 @@ const cssGlobalStyles = css`
 
 const GlobalStyles = () => <Global styles={cssGlobalStyles}/>
 
-function MyApp({ Component, pageProps }: AppProps) {
+interface Props extends AppProps {
+  nls: NLS
+}
+
+function MyApp(props: Props) {
+  const { Component, pageProps, nls } = props
+  useEffect(() => {
+    window.__NLS__ = JSON.stringify(nls)
+  }, [])
   return (
-    <>
+    <NLSContext.Provider value={nls}>
       <GlobalStyles/>
       <Head>
         <title>Create Next App</title>
@@ -23,7 +37,7 @@ function MyApp({ Component, pageProps }: AppProps) {
       </Head>
       <Header/>
       <Component {...pageProps} />
-    </>
+    </NLSContext.Provider>
   )
 }
 
@@ -31,12 +45,39 @@ function MyApp({ Component, pageProps }: AppProps) {
 // every single page in your application. This disables the ability to
 // perform automatic static optimization, causing every page in your app to
 // be server-side rendered.
-//
-// MyApp.getInitialProps = async (appContext: AppContext) => {
-//   // calls page's `getInitialProps` and fills `appProps.pageProps`
-//   const appProps = await App.getInitialProps(appContext);
 
-//   return { ...appProps }
-// }
+MyApp.getInitialProps = async (appContext: AppContext) => {
+  // calls page's `getInitialProps` and fills `appProps.pageProps`
+  const appProps = await App.getInitialProps(appContext);
+
+  const ctx = appContext.ctx
+  const nls = ctx.req
+    ? await getNLSInServer(ctx)
+    : JSON.parse(window.__NLS__) as NLS
+
+  return { ...appProps, nls }
+}
+
+const getNLSInServer = async (ctx: NextPageContext) => {
+  if (!ctx.req) throw new Error('Current is not server side')
+
+  const cookies = cookie.parse(ctx.req.headers.cookie || '')
+  const queryLocale = Array.isArray(ctx.query?.locale)
+    ? ctx.query.locale[0]
+    : ctx.query.locale
+
+  const locale = queryLocale || cookies.locale || 'en'
+  if(cookies.locale !== locale) {
+    const setCookieHeader = cookie.serialize('locale', locale, {
+      path: '/',
+      httpOnly: true,
+      maxAge: 60 * 5, // 5 mins
+    })
+    ctx.res.setHeader('Set-Cookie', setCookieHeader)
+  }
+
+  const nls: NLS = (await import(`../nls/${locale || 'en'}`)).nls
+  return nls
+}
 
 export default MyApp

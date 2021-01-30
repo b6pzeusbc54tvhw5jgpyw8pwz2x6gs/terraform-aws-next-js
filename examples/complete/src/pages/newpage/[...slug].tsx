@@ -3,6 +3,8 @@ import { ParsedUrlQuery } from 'querystring'
 import { GetServerSideProps, NextPage } from 'next'
 import { useRouter } from 'next/router';
 import Link from 'next/Link';
+import { useContext } from 'react'
+import { NLSContext } from '../../nls'
 
 interface Props {
   initialPropsCounter: number
@@ -29,6 +31,7 @@ const NewPage: NextPage<Props> = (props) => {
   const { initialPropsCounter, slug, params, query: serverQuery } = props
   const router = useRouter();
   const { pathname, query } = router;
+  const {messages:m} = useContext(NLSContext)
 
   const reload = () => {
     router.push(format({ pathname, query }));
@@ -44,6 +47,7 @@ const NewPage: NextPage<Props> = (props) => {
   return (
     <div>
       <h2>This is the Home Page</h2>
+      {m.hello} <a href="https://nextjs.org">Next.js!</a>
       <Link href="/about">
         <a>About</a>
       </Link>

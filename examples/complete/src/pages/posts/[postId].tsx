@@ -1,5 +1,7 @@
 import { NextPage } from 'next'
 import Link from 'next/Link'
+import { useContext } from 'react'
+import { NLSContext } from '../../nls'
 import styles from '../../styles/Home.module.css'
 
 interface Props {
@@ -7,16 +9,17 @@ interface Props {
 }
 const PostPage:NextPage<Props> = (props) => {
   const {postId} = props
+  const {messages:m} = useContext(NLSContext)
 
   return (
     <div>
       <main className={styles.main}>
         <h1 className={styles.title}>
-          Welcome to PostPage
+          {m.hello} <a href="https://nextjs.org">Next.js!</a>
         </h1>
 
         <p className={styles.description}>
-          postId: {postId}
+          PostPage. postId: {postId}
         </p>
 
         <div>
