@@ -70,27 +70,49 @@ const replaceLambdaFunctionName = (modifiedConfig: string, buildId: string) => {
     lambdas: {
       __NEXT_API_LAMBDA_0: {
         ...configJson.lambdas.__NEXT_API_LAMBDA_0,
-        filename: `lambdas/${getRouteName(buildId,'API')}.zip`
+        filename: `lambdas/${getRouteName(buildId,'API')}.zip`,
+        memory: 1024,
+        timeout: 5,
       },
       __NEXT_PAGE_LAMBDA_0: {
         ...configJson.lambdas.__NEXT_PAGE_LAMBDA_0,
         filename: `lambdas/${getRouteName(buildId,'PAGE')}.zip`,
+        memory: 1024,
+        timeout: 5,
       },
     },
   }
   return JSON.stringify(modified,null,2)
 }
 
+const createProxyConfig = (config: string) => {
+  const json = JSON.parse(config)
+  const proxyConfig = {
+    buildId: json.buildId,
+    routes: json.routes,
+    staticRoutes: json.staticRoutes,
+    lambdaRoutes: Object.keys(json.lambdas).map((key:string) => json.lambdas[key].route),
+    prerenders: json.prerenders,
+  }
+  return JSON.stringify(proxyConfig,null,2)
+}
+
 const run = () => {
   const buildDir = path.join(cwd, '.next-tf')
   const buildId = getBuildId(buildDir)
   backupConfig(buildDir)
-  let modifiedConfig = getConfigFile(buildDir)
-  modifiedConfig = replaceLambdaFunctionName(modifiedConfig, buildId)
+  const configStr = getConfigFile(buildDir)
+  let modifiedConfig = replaceLambdaFunctionName(configStr, buildId)
   modifiedConfig = replaceWithLambdaFunctionName(modifiedConfig, revisionOrTag)
 
   fs.writeFileSync(path.join(buildDir, 'config.json'), modifiedConfig)
+
+  const proxyConfig = createProxyConfig(modifiedConfig)
+  fs.writeFileSync(path.join(buildDir, 'proxy-config.json'), proxyConfig)
+
   renameLambdaZipFiles(buildId, buildDir)
+
+  fs.unlinkSync(path.join(cwd, '.env.production'))
 }
 
 if (require.main === module) {

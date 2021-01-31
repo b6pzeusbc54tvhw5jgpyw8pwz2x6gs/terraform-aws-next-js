@@ -32,3 +32,23 @@ module "tf-next" {
 output "domain" {
   value = module.tf-next.cloudfront_domain_name
 }
+
+output "static_upload_bucket_id" {
+  value = module.tf-next.static_upload_bucket_id
+}
+
+output "proxy_config_s3_bucket" {
+  value = module.tf-next.proxy_config_s3_bucket
+}
+
+output "lambda_role_arn" {
+  value = module.tf-next.lambda_role_arn
+}
+
+output "apigw_api_id" {
+  value = module.tf-next.apigw_api_id
+}
+
+output "apigw_api_execution_arn" {
+  value = module.tf-next.apigw_api_execution_arn
+}

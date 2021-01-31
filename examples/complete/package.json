@@ -8,6 +8,7 @@
     "pretfbuild": "ts-node --project tsconfig.node.json tools/pre-build.ts",
     "tfbuild": "tf-next build",
     "posttfbuild": "ts-node --project tsconfig.node.json tools/post-build.ts",
+    "deploy": "ts-node --project tsconfig.node.json tools/deploy.ts",
     "start": "next start"
   },
   "dependencies": {
@@ -22,6 +23,8 @@
     "@types/node": "12.19.15",
     "@types/react": "^17.0.0",
     "@types/rimraf": "^3.0.0",
+    "await-to-js": "^2.1.1",
+    "execa": "^5.0.0",
     "rimraf": "^3.0.2",
     "tf-next": "^0.4.1",
     "ts-node": "^9.1.1",

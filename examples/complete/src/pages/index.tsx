@@ -1,9 +1,10 @@
-import { format } from 'url';
+import { format } from 'url'
 import { GetServerSideProps, NextPage } from 'next'
-import { useRouter } from 'next/router';
+import { useRouter } from 'next/router'
 import Link from 'next/Link'
 import { useContext } from 'react'
 import { NLSContext } from '../nls'
+import { getFirstValue } from '../util'
 
 interface Props {
   initialPropsCounter: number
@@ -24,9 +25,9 @@ const Index: NextPage<Props> = (props) => {
   const {messages:m} = useContext(NLSContext)
   const reload = () => {
     router.push(format({ pathname, query }));
-  };
+  }
   const incrementCounter = () => {
-    const counter = Array.isArray(query.counter) ? query.counter[0] : query.counter
+    const counter = getFirstValue(query.counter)
     const currentCounter = counter ? parseInt(counter) : 0;
     const href = `/?counter=${currentCounter + 1}`;
 
