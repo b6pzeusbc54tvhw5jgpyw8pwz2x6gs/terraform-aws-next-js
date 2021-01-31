@@ -4,7 +4,7 @@ import packageJson from '../package.json'
 import { runCommand } from './util'
 
 const namePrefix = process.env.LAMBDA_IDENTIFIER || packageJson.name
-const revisionOrTag = process.env.GIT_REVISION || `default`
+const branchOrTag = process.env.BRANCH_OR_TAG || `default`
 const AWS_DEFAULT_REGION = process.env.AWS_DEFAULT_REGION
 const TFNEXT_STATIC_UPLOAD_BUCKET = process.env.TFNEXT_STATIC_UPLOAD_BUCKET
 const TFNEXT_PROXY_CONFIG_BUCKET = process.env.TFNEXT_PROXY_CONFIG_BUCKET
@@ -33,7 +33,7 @@ const run = async () => {
   const buildId = getBuildId('./.next-tf')
 
   // static upload
-  // await runCommand(`aws s3 cp .next-tf/static-website-files.zip s3://${TFNEXT_STATIC_UPLOAD_BUCKET}/${buildId}/`)
+  await runCommand(`aws s3 cp .next-tf/static-website-files.zip s3://${TFNEXT_STATIC_UPLOAD_BUCKET}/${buildId}/`)
 
   // lambda
   const configJson = require('../.next-tf/config.json')
@@ -63,7 +63,7 @@ const run = async () => {
 
       const integrationRes = await runCommand(`
         aws apigatewayv2 create-integration --api-id ${TFNEXT_APIGW_API_ID}
-          --integration-type AWS_PROXY --description ${namePrefix}\\ ${revisionOrTag}
+          --integration-type AWS_PROXY --description ${namePrefix}\\ ${branchOrTag}
           --connection-type INTERNET --integration-method POST
           --integration-uri arn:aws:apigateway:${AWS_DEFAULT_REGION}:lambda:path/2015-03-31/functions/${functionArn}/invocations
           --payload-format-version 2.0 --timeout-in-millis ${lambda.timeout*1000 + 500}
@@ -76,8 +76,8 @@ const run = async () => {
         --target integrations/${integrationId}
       `.trim().split('\n').map(v => v.trim()).join(' '))
 
-      // await runCommand(`aws logs create-log-group --log-group-name /aws/lambda/${functionName} `)
-      // await runCommand(`aws logs put-retention-policy --log-group-name /aws/lambda/${functionName} --retention-in-days 60`)
+      await runCommand(`aws logs create-log-group --log-group-name /aws/lambda/${functionName} `)
+      await runCommand(`aws logs put-retention-policy --log-group-name /aws/lambda/${functionName} --retention-in-days 60`)
     } else if (JSON.parse(stdout)) {
       console.log('Lambda function name to update: ' + functionName)
       await runCommand(`aws lambda update-function-code --function-name ${functionName} --zip-file fileb://${absFilePath} --publish`)

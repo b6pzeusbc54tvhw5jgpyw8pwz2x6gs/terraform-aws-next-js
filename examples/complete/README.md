@@ -18,17 +18,28 @@ You can start editing the page by modifying `pages/index.js`. The page auto-upda
 
 The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/api-routes/introduction) instead of React pages.
 
-## Learn More
+## First deployment
 
-To learn more about Next.js, take a look at the following resources:
+```
+$ terraform apply
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Application update
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+Set environments like below:
+```
+# You must replace values with your resource info from output of `terraform apply`
+export AWS_DEFAULT_REGION=eu-west-1
+export TFNEXT_STATIC_UPLOAD_BUCKET=tfnext-app-deploy-source-20210127061544072400000001
+export TFNEXT_PROXY_CONFIG_BUCKET=next-tf-proxy-config20210127054511367700000001
+export TFNEXT_LAMBDA_ROLE_ARN=arn:aws:iam::539425821792:role/tfnext-app-lambda-excution-role-76c6d201
+export TFNEXT_APIGW_API_EXECUTION_ARN=arn:aws:execute-api:eu-west-1:539425821792:cofqxic3sg
+export TFNEXT_APIGW_API_ID=cofqxic3sg
+export TFNEXT_ROLE_ARN=arn:aws:iam::539425821792:role/tfnext-app-lambda-excution-role-76c6d201
+export BRANCH_OR_TAG=master
+```
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/import?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+```
+$ yarn tfbuild
+$ yarn deploy
+```

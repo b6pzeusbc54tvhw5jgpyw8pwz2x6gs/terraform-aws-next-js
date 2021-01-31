@@ -4,8 +4,8 @@ const { PHASE_PRODUCTION_BUILD } = require('next/constants')
 module.exports = (phase, { defaultConfig }) => {
   const dateTime = new Date().toISOString().slice(0,19).replace(/:/g,'')
   // You can replace default with the latest git commit hash or tag here
-  const branchNameOrTag = process.env.GIT_REVISION || `default`
-  const buildId = `${branchNameOrTag}-${dateTime}`.replace(/[_: ]/g, '-')
+  const branchOrTag = process.env.BRANCH_OR_TAG || `default`
+  const buildId = `${branchOrTag}-${dateTime}`.replace(/[_: ]/g, '-')
 
   return {
     generateBuildId: () => {

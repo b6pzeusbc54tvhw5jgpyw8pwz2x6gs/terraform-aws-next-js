@@ -4,7 +4,7 @@ import packageJson from '../package.json'
 
 const cwd = process.cwd()
 const identifier = process.env.LAMBDA_IDENTIFIER || packageJson.name
-const revisionOrTag = process.env.GIT_REVISION || `default`
+const branchOrTag = process.env.BRANCH_OR_TAG || `default`
 
 const getBuildId = (buildDir: string) => {
   const {buildId} = require(path.join(buildDir,'config.json'))
@@ -103,7 +103,7 @@ const run = () => {
   backupConfig(buildDir)
   const configStr = getConfigFile(buildDir)
   let modifiedConfig = replaceLambdaFunctionName(configStr, buildId)
-  modifiedConfig = replaceWithLambdaFunctionName(modifiedConfig, revisionOrTag)
+  modifiedConfig = replaceWithLambdaFunctionName(modifiedConfig, branchOrTag)
 
   fs.writeFileSync(path.join(buildDir, 'config.json'), modifiedConfig)
 
