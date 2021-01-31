@@ -13,3 +13,7 @@ output "cloudfront_domain_name" {
 output "cloudfront_arn" {
   value = aws_cloudfront_distribution.distribution.arn
 }
+
+output "proxy_config_s3_bucket" {
+  value = module.proxy_config.config_s3_bucket
+}

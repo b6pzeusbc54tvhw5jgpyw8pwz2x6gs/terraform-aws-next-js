@@ -2,28 +2,16 @@ locals {
   # next-tf config
   config_dir           = trimsuffix(var.next_tf_dir, "/")
   config_file          = jsondecode(file("${local.config_dir}/config.json"))
+  proxy_config_json    = file("${local.config_dir}/proxy-config.json")
   lambdas              = lookup(local.config_file, "lambdas", {})
   static_files_archive = "${local.config_dir}/${lookup(local.config_file, "staticFilesArchive", "")}"
 
   # Build the proxy config JSON
-  config_file_version = lookup(local.config_file, "version", 0)
-  static_routes_json  = lookup(local.config_file, "staticRoutes", [])
-  routes_json         = lookup(local.config_file, "routes", [])
-  lambda_routes_json = flatten([
-    for integration_key, integration in local.lambdas : [
-      lookup(integration, "route", "/")
-    ]
-  ])
-  prerenders_json = lookup(local.config_file, "prerenders", {})
+  config_file_version  = lookup(local.config_file, "version", 0)
   buildId         = lookup(local.config_file, "buildId")
-  proxy_config_json = jsonencode({
-    buildId      = local.buildId
-    routes       = local.routes_json
-    staticRoutes = local.static_routes_json
-    lambdaRoutes = local.lambda_routes_json
-    prerenders   = local.prerenders_json
-  })
 }
+
+data "aws_region" "current" {}
 
 resource "random_id" "suffix" {
   byte_length = 4
@@ -60,13 +48,14 @@ resource "aws_lambda_function" "this" {
   for_each = local.lambdas
 
   function_name = each.key  # function name should contain buildId
-  description   = "Managed by Terraform-next.js"
+  description   = "${var.name_prefix} Managed by Terraform-next.js"
   role          = aws_iam_role.lambda.arn
   handler       = lookup(each.value, "handler", "")
   runtime       = lookup(each.value, "runtime", var.lambda_runtime)
   memory_size   = lookup(each.value, "memory", var.lambda_memory_size)
-  timeout       = var.lambda_timeout
+  timeout       = lookup(each.value, "timeout", var.lambda_timeout)
   tags          = var.tags
+  publish       = true
 
   filename         = "${local.config_dir}/${lookup(each.value, "filename", "")}"
   source_code_hash = filebase64sha256("${local.config_dir}/${lookup(each.value, "filename", "")}")
@@ -88,6 +77,8 @@ resource "aws_lambda_permission" "current_version_triggers" {
 
   statement_id  = "AllowInvokeFromApiGateway"
   action        = "lambda:InvokeFunction"
+  # for alias
+  # function_name = "${each.key}:LIVE"
   function_name = each.key
   principal     = "apigateway.amazonaws.com"
 
@@ -107,6 +98,8 @@ locals {
   integration_values = flatten([
     for integration_key, integration in local.lambdas : {
       lambda_arn             = aws_lambda_function.this[integration_key].arn
+      # for specific alias
+      # lambda_arn             = "arn:aws:apigateway:${data.aws_region.current.name}:lambda:path/2015-03-31/functions/${aws_lambda_function.this[integration_key].arn}:$${stageVariables.lambdaAlias}/invocations"
       payload_format_version = "2.0"
       timeout_milliseconds   = var.lambda_timeout * 1000
     }
