@@ -1,4 +1,4 @@
-import Link from 'next/Link'
+import Link from 'next/link'
 import { GetServerSideProps } from 'next'
 import styles from '../styles/Home.module.css'
 import { useContext } from 'react'

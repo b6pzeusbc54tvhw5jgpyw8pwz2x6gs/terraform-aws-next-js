@@ -1,4 +1,4 @@
-import Link from 'next/Link'
+import Link from 'next/link'
 import { useContext } from 'react'
 import { NLSContext } from '../nls'
 import styles from '../styles/Home.module.css'

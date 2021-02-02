@@ -1,7 +1,7 @@
 import { format } from 'url'
 import { GetServerSideProps, NextPage } from 'next'
 import { useRouter } from 'next/router'
-import Link from 'next/Link'
+import Link from 'next/link'
 import { useContext } from 'react'
 import { NLSContext } from '../nls'
 import { getFirstValue } from '../util'
