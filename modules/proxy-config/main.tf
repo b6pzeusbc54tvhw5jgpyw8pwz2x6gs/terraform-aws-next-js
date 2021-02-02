@@ -1,3 +1,8 @@
+# legacy
+provider "aws" {
+  region = "us-east-1"
+}
+
 locals {
   s3_origin_id         = "S3-Proxy-Config-${aws_s3_bucket.proxy_config.id}"
   proxy_config_key     = "proxy-config.json"
@@ -37,6 +42,7 @@ resource "aws_s3_bucket_policy" "origin_access" {
 #####################
 
 resource "aws_s3_bucket_object" "proxy_config" {
+  count         = var.use_manual_upload ? 0 : 1
   bucket        = aws_s3_bucket.proxy_config.id
   key           = local.proxy_config_key
   content       = var.proxy_config_json

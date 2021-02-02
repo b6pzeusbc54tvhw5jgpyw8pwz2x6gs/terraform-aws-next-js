@@ -171,6 +171,11 @@ variable "proxy_config_ttl" {
   default = 120
 }
 
+variable "use_manual_upload_proxy_config" {
+  type    = bool
+  default = false
+}
+
 ################
 # Debug Settings
 ################

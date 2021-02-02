@@ -1,3 +1,8 @@
+# CloudFront requires that the distribution resource is created in us-east-1
+provider "aws" {
+  region = "us-east-1"
+}
+
 locals {
   origin_id_static_deployment = "S3 Static Deployment"
 }
@@ -16,21 +21,6 @@ module "proxy_package" {
   path_to_file   = "dist.zip"
 }
 */
-
-##############
-# Proxy Config
-##############
-
-module "proxy_config" {
-  source = "../proxy-config"
-
-  name_prefix            = var.name_prefix
-  cloudfront_price_class = var.cloudfront_price_class
-  proxy_config_json      = var.proxy_config_json
-  deployment_name        = var.deployment_name
-  log_bucket_domain_name = var.log_bucket_domain_name
-  tags                   = var.tags
-}
 
 #############
 # Lambda@Edge
@@ -113,7 +103,7 @@ resource "aws_cloudfront_distribution" "distribution" {
 
     custom_header {
       name  = "x-env-config-endpoint"
-      value = "http://${module.proxy_config.config_endpoint}"
+      value = "http://${var.proxy_config_endpoint}"
     }
     custom_header {
       name  = "x-env-config-ttl"

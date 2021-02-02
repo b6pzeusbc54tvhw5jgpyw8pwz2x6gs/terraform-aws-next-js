@@ -46,6 +46,11 @@ module "tf-next" {
   cloudfront_headers                   = null
   cloudfront_cookies_forward           = "whitelist"
   cloudfront_cookies_whitelisted_names = ["locale"]
+
+  # For seperated CI/CD
+  # `use_manual_upload_proxy_config: true` setting removes already auto uploaded proxy-config.
+  # If you want prevent this, use `terraform state rm <resource-name>`.
+  use_manual_upload_proxy_config       = false
 }
 
 output "domain" {

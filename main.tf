@@ -172,6 +172,23 @@ module "ssr_cf" {
   }
 }
 
+##############
+# Proxy Config
+##############
+
+module "proxy_config" {
+  source = "./modules/proxy-config"
+
+  name_prefix            = var.name_prefix
+  cloudfront_price_class = var.cloudfront_price_class
+  proxy_config_json      = local.proxy_config_json
+  deployment_name        = var.deployment_name
+  log_bucket_domain_name = var.log_bucket_domain_name
+  tags                   = var.tags
+  use_manual_upload      = var.use_manual_upload_proxy_config
+}
+
+
 #######
 # Proxy
 #######
@@ -182,8 +199,8 @@ module "proxy" {
   ssr_server_domain_name        = module.ssr_cf.this_cloudfront_distribution_domain_name
   static_bucket_endpoint        = module.statics_deploy.static_bucket_endpoint
   static_bucket_access_identity = module.statics_deploy.static_bucket_access_identity
-  proxy_config_json             = local.proxy_config_json
   proxy_config_version          = local.config_file_version
+  proxy_config_endpoint         = module.proxy_config.config_endpoint
 
   # Forwarding log setting
   enable_log                    = var.enable_log
@@ -210,10 +227,6 @@ module "proxy" {
   cloudfront_headers                   = var.cloudfront_headers
   cloudfront_cookies_forward           = var.cloudfront_cookies_forward
   cloudfront_cookies_whitelisted_names = var.cloudfront_cookies_whitelisted_names
-
-  providers = {
-    aws = aws.global_region
-  }
 }
 
 ################

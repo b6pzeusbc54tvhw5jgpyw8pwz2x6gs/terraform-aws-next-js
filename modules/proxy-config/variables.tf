@@ -22,3 +22,7 @@ variable "tags" {
   type    = map(string)
   default = {}
 }
+
+variable "use_manual_upload" {
+  type    = bool
+}

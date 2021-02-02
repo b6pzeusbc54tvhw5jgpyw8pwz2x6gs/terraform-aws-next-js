@@ -13,7 +13,7 @@ output "cloudfront_hosted_zone_id" {
 }
 
 output "proxy_config_s3_bucket" {
-  value = module.proxy.proxy_config_s3_bucket
+  value = module.proxy_config.config_s3_bucket
 }
 
 output "lambda_role_arn" {

@@ -49,8 +49,7 @@ variable "log_include_cookies" {
   default     = false
 }
 
-
-variable "proxy_config_json" {
+variable "proxy_config_endpoint" {
   type = string
 }
 
