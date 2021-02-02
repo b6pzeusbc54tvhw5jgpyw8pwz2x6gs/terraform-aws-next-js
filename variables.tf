@@ -9,10 +9,38 @@ variable "name_prefix" {
   type        = string
 }
 
+variable "name_suffix" {
+  description = "Identifier for the deployment group (Apppended to resource name)."
+  type        = string
+  default     = null
+}
+
 variable "deployment_name" {
   description = "Identifier for the deployment group (Added to Comments)."
   type        = string
   default     = "Terraform-next.js"
+}
+
+variable "enable_log" {
+  type        = bool
+  default     = false
+}
+
+variable "log_bucket_domain_name" {
+  description = "s3 log bucket domain name"
+  type        = string
+  default     = null
+}
+
+variable "log_prefix_of_prefix" {
+  description = "prefix of s3 log bucket prefix"
+  type        = string
+  default     = null
+}
+
+variable "log_include_cookies" {
+  type        = bool
+  default     = false
 }
 
 variable "domain_names" {

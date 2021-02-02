@@ -15,7 +15,7 @@ data "aws_iam_policy_document" "assume_role" {
 }
 
 resource "aws_iam_role" "lambda" {
-  name        = "${var.name_prefix}-lambda-excution-role-${random_id.suffix.hex}"
+  name        = "${var.name_prefix}-lambda-excution-role-${var.name_suffix}"
   description = "Managed by Terraform Next.js"
 
   permissions_boundary = var.lambda_role_permissions_boundary

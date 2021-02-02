@@ -2,6 +2,10 @@ variable "name_prefix" {
   type = string
 }
 
+variable "name_suffix" {
+  type = string
+}
+
 variable "ssr_server_domain_name" {
   type = string
 }
@@ -9,10 +13,6 @@ variable "ssr_server_domain_name" {
 variable "package_abs_path" {
   type = string
   default = ""
-}
-
-variable "log_bucket_domain_name" {
-  type = string
 }
 
 variable "static_bucket_access_identity" {
@@ -26,6 +26,29 @@ variable "static_bucket_endpoint" {
 variable "cloudfront_price_class" {
   type = string
 }
+
+variable "enable_log" {
+  type        = bool
+  default     = false
+}
+
+variable "log_bucket_domain_name" {
+  description = "s3 log bucket domain name"
+  type        = string
+  default     = null
+}
+
+variable "log_prefix_of_prefix" {
+  description = "prefix of s3 log bucket prefix"
+  type        = string
+  default     = null
+}
+
+variable "log_include_cookies" {
+  type        = bool
+  default     = false
+}
+
 
 variable "proxy_config_json" {
   type = string

@@ -8,23 +8,15 @@ locals {
 
   # Build the proxy config JSON
   config_file_version  = lookup(local.config_file, "version", 0)
-  buildId         = lookup(local.config_file, "buildId")
+  buildId              = lookup(local.config_file, "buildId")
+  name_suffix          = var.name_suffix == null ? random_id.suffix.hex : var.name_suffix
 }
-
-data "aws_region" "current" {}
 
 resource "random_id" "suffix" {
   byte_length = 4
 }
 
-resource "aws_s3_bucket" "log_bucket" {
-  bucket = "${var.name_prefix}-log-${random_id.suffix.hex}"
-  acl    = "log-delivery-write"
-}
-
-#########
-# Lambdas
-#########
+data "aws_region" "current" {}
 
 # Static deployment to S3 website
 module "statics_deploy" {
@@ -32,7 +24,7 @@ module "statics_deploy" {
 
   build_id                 = local.buildId
   name_prefix              = var.name_prefix
-  name_suffix              = random_id.suffix.hex
+  name_suffix              = local.name_suffix
   static_files_archive     = local.static_files_archive
   expire_static_assets     = var.expire_static_assets
   package_abs_path         = var.static_deploy_package_abs_path
@@ -42,7 +34,9 @@ module "statics_deploy" {
   lambda_role_permissions_boundary = var.lambda_role_permissions_boundary
 }
 
+########
 # Lambda
+########
 
 resource "aws_lambda_function" "this" {
   for_each = local.lambdas
@@ -111,7 +105,7 @@ module "api_gateway" {
   source  = "terraform-aws-modules/apigateway-v2/aws"
   version = "0.8.0"
 
-  name          = "${var.name_prefix}-${random_id.suffix.hex}"
+  name          = "${var.name_prefix}-${local.name_suffix}"
   description   = "${var.name_prefix} Managed by Terraform-next.js"
   protocol_type = "HTTP"
 
@@ -137,11 +131,12 @@ module "ssr_cf" {
   wait_for_deployment = true
 
   create_origin_access_identity = false
-  logging_config = {
-    include_cookies = false
-    bucket = aws_s3_bucket.log_bucket.bucket_domain_name
-    prefix = "${var.name_prefix}-cloudfront-ssr"
-  }
+
+  logging_config = var.enable_log ? {
+    bucket          = var.log_bucket_domain_name
+    prefix          = "${var.log_prefix_of_prefix}-cloudfront-ssr"
+    include_cookies = var.log_include_cookies
+  } : null
 
   origin = {
     ssr-api-gateway = {
@@ -177,7 +172,6 @@ module "ssr_cf" {
   }
 }
 
-
 #######
 # Proxy
 #######
@@ -190,10 +184,16 @@ module "proxy" {
   static_bucket_access_identity = module.statics_deploy.static_bucket_access_identity
   proxy_config_json             = local.proxy_config_json
   proxy_config_version          = local.config_file_version
-  log_bucket_domain_name        = aws_s3_bucket.log_bucket.bucket_domain_name
+
+  # Forwarding log setting
+  enable_log                    = var.enable_log
+  log_bucket_domain_name        = var.log_bucket_domain_name
+  log_prefix_of_prefix          = var.log_prefix_of_prefix
+  log_include_cookies           = var.log_include_cookies
 
   # Forwarding variables
   name_prefix                          = var.name_prefix
+  name_suffix                          = local.name_suffix
   package_abs_path                     = var.proxy_package_abs_path
   deployment_name                      = var.deployment_name
   proxy_config_ttl                     = var.proxy_config_ttl

@@ -12,10 +12,29 @@ provider "aws" {
   region = "us-east-1"
 }
 
+locals {
+  name_prefix = lookup(jsondecode(file("package.json")),"name","tfnext-app")
+}
+
+resource "random_id" "suffix" {
+  byte_length = 4
+}
+
+resource "aws_s3_bucket" "log" {
+  bucket = "${local.name_prefix}-log-${random_id.suffix.hex}"
+  acl    = "log-delivery-write"
+}
+
 module "tf-next" {
   # source               = "github.com/b6pzeusbc54tvhw5jgpyw8pwz2x6gs/terraform-aws-next-js"
-  name_prefix            = lookup(jsondecode(file("package.json")),"name","tfnext-app")
+  name_prefix            = local.name_prefix
+  name_suffix            = random_id.suffix.hex
   cloudfront_price_class = "PriceClass_All"
+
+  enable_log             = true
+  log_bucket_domain_name = aws_s3_bucket.log.bucket_domain_name
+  log_prefix_of_prefix   = "${local.name_prefix}-log"
+  log_include_cookies    = false
 
   # for local test
   source = "../../"

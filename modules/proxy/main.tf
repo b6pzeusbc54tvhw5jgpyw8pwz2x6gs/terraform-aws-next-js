@@ -46,7 +46,7 @@ module "edge_proxy" {
 
   lambda_at_edge = true
 
-  function_name = "${var.name_prefix}-edge-proxy-${random_id.function_name.hex}"
+  function_name = "${var.name_prefix}-edge-proxy-${var.name_suffix}"
   description   = "Managed by Terraform-next.js"
   handler       = "handler.handler"
   runtime       = var.lambda_default_runtime
@@ -93,10 +93,13 @@ resource "aws_cloudfront_distribution" "distribution" {
   default_root_object = "index"
   tags            = var.tags
 
-  logging_config {
-    include_cookies = false
-    bucket          = var.log_bucket_domain_name
-    prefix          = "${var.name_prefix}-cloudfront-proxy-main"
+  dynamic "logging_config" {
+    for_each = var.enable_log ? [1] : []
+    content {
+      bucket          = var.log_bucket_domain_name
+      prefix          = "${var.log_prefix_of_prefix}-cloudfront-proxy-main"
+      include_cookies = var.log_include_cookies
+    }
   }
 
   # Static deployment S3 bucket
