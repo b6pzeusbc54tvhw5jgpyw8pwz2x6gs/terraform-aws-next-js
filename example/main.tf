@@ -37,9 +37,9 @@ module "tf-next" {
   log_include_cookies    = false
 
   # for local test
-  source = "../../"
-  static_deploy_package_abs_path = abspath("../../packages/deploy-trigger/dist.zip")
-  proxy_package_abs_path         = abspath("../../packages/proxy/dist.zip")
+  source = "../"
+  static_deploy_package_abs_path = abspath("../packages/deploy-trigger/dist.zip")
+  proxy_package_abs_path         = abspath("../packages/proxy/dist.zip")
 
   cloudfront_query_string              = true
   cloudfront_query_string_cache_keys   = null
