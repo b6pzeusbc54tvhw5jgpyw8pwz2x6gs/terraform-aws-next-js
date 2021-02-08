@@ -62,7 +62,15 @@ export const fetchProxyConfigWithCache = async (endpointUri: string, ttl: number
   */
 
   // At initial setting, it must wait to fetch
-  proxyConfig = await pendingPromise
+  try {
+    proxyConfig = await pendingPromise
+  } catch(err) {
+    pendingPromise = null
+    console.error('Error fail to fetch proxy-config:')
+    console.error(err)
+    console.log(proxyConfig ? 'return previous proxyConfig' : 'No proxyConfig')
+    return proxyConfig
+  }
   lastFetchedTS = new Date().getTime()
   pendingPromise = null
   console.log(`Initial proxyConfig: ${proxyConfig.buildId}`)
