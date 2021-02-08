@@ -8,7 +8,7 @@ const branchOrTag = process.env.BRANCH_OR_TAG || `default`
 const AWS_DEFAULT_REGION = process.env.AWS_DEFAULT_REGION
 const TFNEXT_STATIC_UPLOAD_BUCKET = process.env.TFNEXT_STATIC_UPLOAD_BUCKET
 const TFNEXT_PROXY_CONFIG_BUCKET = process.env.TFNEXT_PROXY_CONFIG_BUCKET
-const TFNEXT_ROLE_ARN = process.env.TFNEXT_ROLE_ARN
+const TFNEXT_LAMBDA_ROLE_ARN = process.env.TFNEXT_LAMBDA_ROLE_ARN
 const TFNEXT_APIGW_API_EXECUTION_ARN = process.env.TFNEXT_APIGW_API_EXECUTION_ARN
 const TFNEXT_APIGW_API_ID = process.env.TFNEXT_APIGW_API_ID
 
@@ -46,7 +46,7 @@ const run = async () => {
       const res = await runCommand(`
         aws lambda create-function --function-name ${functionName}
           --runtime ${lambda.runtime} --timeout ${lambda.timeout}
-          --memory-size ${lambda.memory} --role ${TFNEXT_ROLE_ARN}
+          --memory-size ${lambda.memory} --role ${TFNEXT_LAMBDA_ROLE_ARN}
           --zip-file fileb://${absFilePath} --handler now__launcher.launcher
           --description ${namePrefix}\\ nextjs
           --publish
@@ -93,6 +93,15 @@ const run = async () => {
   await runCommand(`aws s3 cp .next-tf/proxy-config.json s3://${TFNEXT_PROXY_CONFIG_BUCKET}/proxy-config.json`)
 }
 
+const startAsync = async () => {
+  try {
+    await run()
+  } catch(err) {
+    console.error(err)
+    process.exit(1)
+  }
+}
+
 if (require.main === module) {
-  run()
+  startAsync()
 }
