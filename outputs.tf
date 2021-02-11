@@ -27,3 +27,13 @@ output "apigw_api_id" {
 output "apigw_api_execution_arn" {
   value = module.api_gateway.this_apigatewayv2_api_execution_arn
 }
+
+output "deployment_environments" {
+  value = <<EOT
+export TFNEXT_STATIC_UPLOAD_BUCKET=${module.statics_deploy.static_upload_bucket_id}
+export TFNEXT_PROXY_CONFIG_BUCKET=${module.proxy_config.config_s3_bucket}
+export TFNEXT_LAMBDA_ROLE_ARN=${aws_iam_role.lambda.arn}
+export TFNEXT_APIGW_API_EXECUTION_ARN=${module.api_gateway.this_apigatewayv2_api_execution_arn}
+export TFNEXT_APIGW_API_ID=${module.api_gateway.this_apigatewayv2_api_id}
+EOT
+}

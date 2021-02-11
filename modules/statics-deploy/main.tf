@@ -15,11 +15,6 @@ resource "aws_s3_bucket" "static_upload" {
   acl           = "private"
   force_destroy = true
   tags          = var.tags
-
-  # We are using versioning here to ensure that no file gets overridden at upload
-  versioning {
-    enabled = true
-  }
 }
 
 data "aws_iam_policy_document" "access_static_upload" {
@@ -204,6 +199,7 @@ module "deploy_trigger" {
 ###########################
 
 resource "null_resource" "static_s3_upload" {
+  count = var.use_manual_app_deploy ? 0 : 1
   triggers = {
     static_files_archive = filemd5(var.static_files_archive)
   }

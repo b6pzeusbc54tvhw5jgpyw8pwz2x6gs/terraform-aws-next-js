@@ -22,16 +22,17 @@ data "aws_region" "current" {}
 module "statics_deploy" {
   source = "./modules/statics-deploy"
 
-  build_id                 = local.buildId
-  name_prefix              = var.name_prefix
-  name_suffix              = local.name_suffix
-  static_files_archive     = local.static_files_archive
-  expire_static_assets     = var.expire_static_assets
-  package_abs_path         = var.static_deploy_package_abs_path
-  cloudfront_id            = module.proxy.cloudfront_id
-  cloudfront_arn           = module.proxy.cloudfront_arn
-  tags                     = var.tags
+  build_id                         = local.buildId
+  name_prefix                      = var.name_prefix
+  name_suffix                      = local.name_suffix
+  static_files_archive             = local.static_files_archive
+  expire_static_assets             = var.expire_static_assets
+  package_abs_path                 = var.static_deploy_package_abs_path
+  cloudfront_id                    = module.proxy.cloudfront_id
+  cloudfront_arn                   = module.proxy.cloudfront_arn
+  tags                             = var.tags
   lambda_role_permissions_boundary = var.lambda_role_permissions_boundary
+  use_manual_app_deploy            = var.use_manual_app_deploy
 }
 
 ########
@@ -39,7 +40,7 @@ module "statics_deploy" {
 ########
 
 resource "aws_lambda_function" "this" {
-  for_each = local.lambdas
+  for_each      = var.use_manual_app_deploy ? {} : local.lambdas
 
   function_name = each.key  # function name should contain buildId
   description   = "${var.name_prefix} Managed by Terraform-next.js"
@@ -67,7 +68,7 @@ resource "aws_lambda_function" "this" {
 # Lambda invoke permission
 
 resource "aws_lambda_permission" "current_version_triggers" {
-  for_each = local.lambdas
+  for_each = var.use_manual_app_deploy ? {} : local.lambdas
 
   statement_id  = "AllowInvokeFromApiGateway"
   action        = "lambda:InvokeFunction"
@@ -79,17 +80,30 @@ resource "aws_lambda_permission" "current_version_triggers" {
   source_arn = "${module.api_gateway.this_apigatewayv2_api_execution_arn}/*/*/*"
 }
 
+#############################
+# Cloudwatch Logs (λ Next.js)
+#############################
+
+resource "aws_cloudwatch_log_group" "this" {
+  for_each          = var.use_manual_app_deploy ? {} : local.lambdas
+
+  name              = "/aws/lambda/${each.key}"
+  retention_in_days = 14
+
+  tags              = var.tags
+}
+
 #############
 # Api-Gateway
 #############
 
 locals {
-  integrations_keys = flatten([
+  integrations_keys = var.use_manual_app_deploy ? [] : flatten([
     for integration_key, integration in local.lambdas : [
       "ANY ${lookup(integration, "route", "")}/{proxy+}"
     ]
   ])
-  integration_values = flatten([
+  integration_values = var.use_manual_app_deploy ? [] : flatten([
     for integration_key, integration in local.lambdas : {
       lambda_arn             = aws_lambda_function.this[integration_key].arn
       # for specific alias
@@ -111,7 +125,7 @@ module "api_gateway" {
 
   create_api_domain_name = false
 
-  integrations = local.integrations
+  integrations = var.use_manual_app_deploy ? {} : local.integrations
 
   tags = var.tags
 }
@@ -185,7 +199,7 @@ module "proxy_config" {
   deployment_name        = var.deployment_name
   log_bucket_domain_name = var.log_bucket_domain_name
   tags                   = var.tags
-  use_manual_upload      = var.use_manual_upload_proxy_config
+  use_manual_app_deploy  = var.use_manual_app_deploy
 }
 
 

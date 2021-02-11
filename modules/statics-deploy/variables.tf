@@ -28,6 +28,11 @@ variable "expire_static_assets" {
   type = number
 }
 
+variable "use_manual_app_deploy" {
+  description = "If true, Terraform apply doesn't upload static assetsc"
+  type        = bool
+}
+
 variable "cloudfront_id" {
   description = "The ID of the CloudFront distribution where the route invalidations should be sent to."
   type        = string

@@ -25,19 +25,6 @@ resource "aws_iam_role" "lambda" {
   tags        = var.tags
 }
 
-#############################
-# Cloudwatch Logs (λ Next.js)
-#############################
-
-resource "aws_cloudwatch_log_group" "this" {
-  for_each = local.lambdas
-
-  name              = "/aws/lambda/${each.key}"
-  retention_in_days = 14
-
-  tags              = var.tags
-}
-
 data "aws_iam_policy_document" "lambda_logging" {
   statement {
     effect = "Allow"

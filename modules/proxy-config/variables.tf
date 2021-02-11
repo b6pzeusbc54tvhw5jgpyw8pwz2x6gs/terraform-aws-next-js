@@ -23,6 +23,7 @@ variable "tags" {
   default = {}
 }
 
-variable "use_manual_upload" {
-  type    = bool
+variable "use_manual_app_deploy" {
+  description = "If true, Terraform apply doesn't upload static assetsc"
+  type        = bool
 }

@@ -47,32 +47,18 @@ module "tf-next" {
   cloudfront_cookies_forward           = "whitelist"
   cloudfront_cookies_whitelisted_names = ["locale"]
 
-  # For seperated CI/CD
-  # `use_manual_upload_proxy_config: true` setting removes already auto uploaded proxy-config.
-  # If you want prevent this, use `terraform state rm <resource-name>`.
-  use_manual_upload_proxy_config       = false
+  # If you want seperated application CI/CD solution,
+  # you can use `use_manual_app_deploy: true`
+  # Notice:
+  # first `true` setting removes already auto uploaded
+  # proxy-config, static assets, lambda, lambda-permission, api-gateway integrations.
+  use_manual_app_deploy                = true
 }
 
 output "domain" {
   value = module.tf-next.cloudfront_domain_name
 }
 
-output "static_upload_bucket_id" {
-  value = module.tf-next.static_upload_bucket_id
-}
-
-output "proxy_config_s3_bucket" {
-  value = module.tf-next.proxy_config_s3_bucket
-}
-
-output "lambda_role_arn" {
-  value = module.tf-next.lambda_role_arn
-}
-
-output "apigw_api_id" {
-  value = module.tf-next.apigw_api_id
-}
-
-output "apigw_api_execution_arn" {
-  value = module.tf-next.apigw_api_execution_arn
+output "deployment_environments" {
+  value = module.tf-next.deployment_environments
 }

@@ -42,7 +42,7 @@ resource "aws_s3_bucket_policy" "origin_access" {
 #####################
 
 resource "aws_s3_bucket_object" "proxy_config" {
-  count         = var.use_manual_upload ? 0 : 1
+  count         = var.use_manual_app_deploy ? 0 : 1
   bucket        = aws_s3_bucket.proxy_config.id
   key           = local.proxy_config_key
   content       = var.proxy_config_json

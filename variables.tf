@@ -171,7 +171,7 @@ variable "proxy_config_ttl" {
   default = 120
 }
 
-variable "use_manual_upload_proxy_config" {
+variable "use_manual_app_deploy" {
   type    = bool
   default = false
 }
