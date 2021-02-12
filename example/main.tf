@@ -13,7 +13,7 @@ provider "aws" {
 }
 
 locals {
-  name_prefix = lookup(jsondecode(file("package.json")),"name","tfnext-app")
+  name_prefix = lookup(jsondecode(file("package.json")),"name","tfnext")
 }
 
 resource "random_id" "suffix" {
@@ -61,4 +61,7 @@ output "domain" {
 
 output "deployment_environments" {
   value = module.tf-next.deployment_environments
+}
+output "aws_credential_for_cicd" {
+  value = module.tf-next.aws_credential_for_cicd
 }

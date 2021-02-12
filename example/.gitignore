@@ -38,6 +38,7 @@ yarn-error.log*
 /.next-tf/
 /.terraform/
 /backend.hcl
+/pubkey.gpg
 
 ##########################
 /.idea

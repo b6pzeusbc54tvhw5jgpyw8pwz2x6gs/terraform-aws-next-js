@@ -1,3 +1,6 @@
+data "aws_region" "current" {}
+data "aws_caller_identity" "current" {}
+
 locals {
   # next-tf config
   config_dir           = trimsuffix(var.next_tf_dir, "/")
@@ -10,13 +13,15 @@ locals {
   config_file_version  = lookup(local.config_file, "version", 0)
   buildId              = lookup(local.config_file, "buildId")
   name_suffix          = var.name_suffix == null ? random_id.suffix.hex : var.name_suffix
+
+  account_id           = data.aws_caller_identity.current.account_id
+  region_name          = data.aws_region.current.name
 }
 
 resource "random_id" "suffix" {
   byte_length = 4
 }
 
-data "aws_region" "current" {}
 
 # Static deployment to S3 website
 module "statics_deploy" {

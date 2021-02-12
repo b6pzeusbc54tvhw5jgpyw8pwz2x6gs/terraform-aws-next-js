@@ -1,7 +1,7 @@
 import * as path from 'path'
 import to from 'await-to-js'
 import packageJson from '../package.json'
-import { runCommand } from './util'
+import { runCommand } from './helpers'
 
 const namePrefix = process.env.LAMBDA_IDENTIFIER || packageJson.name
 const branchOrTag = process.env.BRANCH_OR_TAG || `default`
@@ -40,7 +40,7 @@ const run = async () => {
   const promises = Object.keys(configJson.lambdas).map(async (functionName: string) => {
     const lambda: Lambda = configJson.lambdas[functionName]
     const absFilePath = path.resolve('./.next-tf', lambda.filename)
-    const [err,stdout] = await to(runCommand(`aws lambda get-function --function-name ${functionName}`))
+    const [err] = await to(runCommand(`aws lambda get-function --function-name ${functionName}`))
     if (/^An error occurred \(ResourceNotFoundException\).*$/.test(err?.message)) {
       console.log('========== Lambda function name to create: ' + functionName)
       const res = await runCommand(`
@@ -76,9 +76,15 @@ const run = async () => {
         --target integrations/${integrationId}
       `.trim().split('\n').map(v => v.trim()).join(' '))
 
-      await runCommand(`aws logs create-log-group --log-group-name /aws/lambda/${functionName} `)
+      const [err2] = await to(runCommand(`aws logs create-log-group --log-group-name /aws/lambda/${functionName}`))
+      if (err2 && /^An error occurred \(ResourceAlreadyExistsException\).*$/.test(err2?.message)) {
+        console.log('log-group already exists')
+      } else if (err2) {
+        throw err2
+      }
+
       await runCommand(`aws logs put-retention-policy --log-group-name /aws/lambda/${functionName} --retention-in-days 60`)
-    } else if (JSON.parse(stdout)) {
+    } else if (!err) {
       console.log('Lambda function name to update: ' + functionName)
       await runCommand(`aws lambda update-function-code --function-name ${functionName} --zip-file fileb://${absFilePath} --publish`)
     } else {

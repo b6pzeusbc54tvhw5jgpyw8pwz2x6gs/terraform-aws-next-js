@@ -1,10 +1,8 @@
 import * as fs from 'fs'
 import * as path from 'path'
-import packageJson from '../package.json'
+import { branchOrTag, getLambdaFunctionName, projectName } from './helpers'
 
 const cwd = process.cwd()
-const identifier = process.env.LAMBDA_IDENTIFIER || packageJson.name
-const branchOrTag = process.env.BRANCH_OR_TAG || `default`
 
 const getBuildId = (buildDir: string) => {
   const {buildId} = require(path.join(buildDir,'config.json'))
@@ -16,14 +14,8 @@ const getBuildId = (buildDir: string) => {
 
 const getRouteName = (buildId: string, type: 'API' | 'PAGE') => {
   return type === 'API'
-    ? `${identifier}-api-${buildId}`
-    : `${identifier}-page-${buildId}`
-}
-
-const getLambdaFunctionName = (lambdaSuffix: string, type: 'API' | 'PAGE') => {
-  return type === 'API'
-    ? `${identifier}-api-${lambdaSuffix}`
-    : `${identifier}-page-${lambdaSuffix}`
+    ? `${projectName}-api-${buildId}`
+    : `${projectName}-page-${buildId}`
 }
 
 const getConfigFile = (buildDir: string): string => {
@@ -63,7 +55,7 @@ const renameLambdaZipFiles = (buildId: string, buildDir: string) => {
   }
 }
 
-const replaceLambdaFunctionName = (modifiedConfig: string, buildId: string) => {
+const modifyLambdas = (modifiedConfig: string, buildId: string) => {
   const configJson = JSON.parse(modifiedConfig)
   const modified = {
     ...configJson,
@@ -102,7 +94,7 @@ const run = () => {
   const buildId = getBuildId(buildDir)
   backupConfig(buildDir)
   const configStr = getConfigFile(buildDir)
-  let modifiedConfig = replaceLambdaFunctionName(configStr, buildId)
+  let modifiedConfig = modifyLambdas(configStr, buildId)
   modifiedConfig = replaceWithLambdaFunctionName(modifiedConfig, branchOrTag)
 
   fs.writeFileSync(path.join(buildDir, 'config.json'), modifiedConfig)

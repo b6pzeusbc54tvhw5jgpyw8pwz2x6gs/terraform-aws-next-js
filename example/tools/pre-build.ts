@@ -1,7 +1,7 @@
 import fs from 'fs'
 import rimraf from 'rimraf'
 import * as path from 'path'
-import { runCommand } from './util'
+import { runCommand } from './helpers'
 import to from 'await-to-js'
 
 const cwd = process.cwd()

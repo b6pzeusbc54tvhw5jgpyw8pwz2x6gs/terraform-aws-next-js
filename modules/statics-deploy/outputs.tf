@@ -9,3 +9,7 @@ output "static_bucket_endpoint" {
 output "static_upload_bucket_id" {
   value = aws_s3_bucket.static_upload.id
 }
+
+output "static_deploy_bucket_id" {
+  value = aws_s3_bucket.static_deploy.id
+}

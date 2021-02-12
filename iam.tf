@@ -68,3 +68,88 @@ resource "aws_iam_role_policy_attachment" "additional_json" {
   role       = aws_iam_role.lambda[each.key].name
   policy_arn = aws_iam_policy.additional_json[0].arn
 }
+
+####################
+# IAM User for CI/CD
+####################
+
+resource "aws_iam_user_policy" "cicd" {
+  name = "${var.name_prefix}-tfnext-cicd-${var.name_suffix}"
+  user = aws_iam_user.cicd.name
+
+  policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": [
+        "iam:PassRole"
+      ],
+      "Effect": "Allow",
+      "Resource": [
+        "${aws_iam_role.lambda.arn}"
+      ]
+    },
+    {
+      "Action": [
+        "s3:PutObject"
+      ],
+      "Effect": "Allow",
+      "Resource": [
+        "arn:aws:s3:::${module.statics_deploy.static_upload_bucket_id}/*",
+        "arn:aws:s3:::${module.proxy_config.config_s3_bucket}/*"
+      ]
+    },
+    {
+      "Action": [
+        "lambda:CreateFunction",
+        "lambda:GetFunction",
+        "lambda:DeleteFunction",
+        "lambda:UpdateFunctionCode",
+        "lambda:AddPermission"
+      ],
+      "Effect": "Allow",
+      "Resource": [
+        "arn:aws:lambda:${local.region_name}:${local.account_id}:function:${var.name_prefix}-*"
+      ]
+    },
+    {
+      "Action": [
+        "logs:CreateLogGroup",
+        "logs:PutRetentionPolicy"
+      ],
+      "Effect": "Allow",
+      "Resource": [
+        "arn:aws:logs:${local.region_name}:${local.account_id}:log-group:/aws/lambda/${var.name_prefix}-*:log-stream:*"
+      ]
+    },
+    {
+      "Action": [
+        "apigateway:GET",
+        "apigateway:POST",
+        "apigateway:DELETE"
+      ],
+      "Effect": "Allow",
+      "Resource": [
+        "arn:aws:apigateway:${local.region_name}::/apis/${module.api_gateway.this_apigatewayv2_api_id}/*",
+        "arn:aws:apigateway:${local.region_name}::/apis/${module.api_gateway.this_apigatewayv2_api_id}/routes",
+        "arn:aws:apigateway:${local.region_name}::/apis/${module.api_gateway.this_apigatewayv2_api_id}/integrations/*"
+      ]
+    }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_user" "cicd" {
+  name = "${var.name_prefix}-cicd-${var.name_suffix}"
+  path = "/"
+}
+
+resource "aws_iam_access_key" "cicd" {
+  user = aws_iam_user.cicd.name
+  pgp_key = file("./pubkey.gpg")
+  lifecycle {
+    ignore_changes = [pgp_key]
+  }
+}

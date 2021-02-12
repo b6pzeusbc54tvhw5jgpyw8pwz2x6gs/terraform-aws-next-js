@@ -9,6 +9,7 @@
     "tfbuild": "tf-next build",
     "posttfbuild": "ts-node --project tsconfig.node.json tools/post-build.ts",
     "deploy": "ts-node --project tsconfig.node.json tools/deploy.ts",
+    "deploy:remove-lambda": "ts-node --project tsconfig.node.json tools/remove-lambda.ts",
     "start": "next start"
   },
   "dependencies": {
