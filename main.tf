@@ -246,6 +246,10 @@ module "proxy" {
   cloudfront_headers                   = var.cloudfront_headers
   cloudfront_cookies_forward           = var.cloudfront_cookies_forward
   cloudfront_cookies_whitelisted_names = var.cloudfront_cookies_whitelisted_names
+
+  providers = {
+    aws = aws.global_region
+  }
 }
 
 ################
