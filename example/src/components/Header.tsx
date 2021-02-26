@@ -13,10 +13,20 @@ const cssHeader = () => css`
   width: 100%;
 `
 
+const cnPart1 = css`
+  background-color: #ffbebe;
+`
+const cnPart2 = css`
+  background-color: #c5d3ff;
+`
+const cnPart3 = css`
+  background-color: #f6bcff;
+`
+
 export const Header = () => {
   return (
     <header css={cssHeader}>
-      <nav>
+      <nav css={cnPart1}>
         <Link href="/"><a>Index</a></Link>
         <Link href="/newpage/[...slug]" as={`/newpage/a/b/c`}><a>Slug Test</a></Link>
         <Link href="/about"><a>About</a></Link>
@@ -30,10 +40,20 @@ export const Header = () => {
         <Link href="/posts/aaa"><a>/posts/aaa</a></Link>
         <Link href="/posts/bbb"><a>/posts/bbb</a></Link>
         <Link href="/posts/ccc"><a>/posts/ccc</a></Link>
+      </nav>
+      <nav css={cnPart2}>
         <Link href="/newpage/a/b/c"><a>Link /newpage/a/b/c</a></Link>
         <Link href="/oldpage/a/b/c"><a>Link /oldpage/a/b/c</a></Link>
         <a href="/newpage/a/b/c">a tag /newpage/a/b/c</a>
         <a href="/oldpage/a/b/c">a tag /oldpage/a/b/c</a>
+      </nav>
+      <nav css={cnPart3}>
+        <Link href="/image-background"><a>background</a></Link>
+        <Link href="/image-quality"><a>quality</a></Link>
+        <Link href="/image-layout-fill"><a>layout-fill</a></Link>
+        <Link href="/image-layout-fixed"><a>layout-fixed</a></Link>
+        <Link href="/image-layout-intrinsic"><a>layout-intrinsic</a></Link>
+        <Link href="/image-layout-responsive"><a>layout-responsive</a></Link>
       </nav>
       <style jsx>{`
         a {
