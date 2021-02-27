@@ -1,11 +1,14 @@
-const { PHASE_PRODUCTION_BUILD } = require('next/constants')
+// @ts-check
+const {PHASE_PRODUCTION_BUILD, } = require('next/constants')
 
-
+/** @type {import("next/config")} */
 module.exports = (phase, { defaultConfig }) => {
   const dateTime = new Date().toISOString().slice(0,19).replace(/:/g,'')
   // You can replace default with the latest git commit hash or tag here
   const branchOrTag = process.env.BRANCH_OR_TAG || `default`
-  const buildId = `${branchOrTag}-${dateTime}`.replace(/[_: ]/g, '-')
+  const buildId = phase === PHASE_PRODUCTION_BUILD
+    ? `${branchOrTag}-${dateTime}`.replace(/[_: ]/g, '-')
+    : `${branchOrTag}-local`
 
   return {
     generateBuildId: () => {
@@ -30,6 +33,14 @@ module.exports = (phase, { defaultConfig }) => {
           permanent: true,
         },
       ];
+    },
+    images: {
+      deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+      imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+      // path: '/_next/image',
+      path: `/image/${buildId}/`,
+      loader: 'default',
+      domains: [],
     },
   }
 };

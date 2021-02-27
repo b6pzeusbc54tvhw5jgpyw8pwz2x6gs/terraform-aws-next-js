@@ -10,6 +10,7 @@ locals {
   static_files_archive = "${local.config_dir}/${lookup(local.config_file, "staticFilesArchive", "")}"
 
   # Build the proxy config JSON
+  config_file_images   = lookup(local.config_file, "images", {})
   config_file_version  = lookup(local.config_file, "version", 0)
   buildId              = lookup(local.config_file, "buildId")
   name_suffix          = var.name_suffix == null ? random_id.suffix.hex : var.name_suffix
@@ -207,6 +208,84 @@ module "proxy_config" {
   use_manual_app_deploy  = var.use_manual_app_deploy
 }
 
+############
+# Next/Image
+############
+
+# Permission for image optimizer to fetch images from S3 deployment
+data "aws_iam_policy_document" "access_static_deployment" {
+  statement {
+    actions   = ["s3:GetObject"]
+    resources = ["${module.statics_deploy.static_deploy_bucket_arn}/*"]
+  }
+}
+
+module "next_image" {
+  count = var.create_image_optimization ? 1 : 0
+
+  # source  = "github.com/b6pzeusbc54tvhw5jgpyw8pwz2x6gs/terraform-aws-next-js-image-optimization"
+  # version = "2.0.0"
+  source  = "../terraform-aws-next-js-image-optimization"
+
+  cloudfront_create_distribution = false
+  next_image_path_prefix         = var.next_image_path_prefix
+  next_image_package_abs_path    = var.next_image_package_abs_path
+
+  # tf-next does not distinct between image and device sizes, because they
+  # are eventually merged together on the image optimizer.
+  # So we only use a single key (next_image_domains) to pass ALL (image &
+  # device) sizes to the optimizer and by setting the other
+  # (next_image_device_sizes) to an empty array which prevents the optimizer
+  # from adding the default device settings
+  next_image_domains      = lookup(local.config_file_images, "domains", [])
+  # next_image_device_sizes = []
+  # next_image_image_sizes  = lookup(local.config_file_images, "sizes", [])
+  next_image_device_sizes = var.next_image_device_sizes
+  next_image_image_sizes  = var.next_image_image_sizes
+
+  source_bucket_id = module.statics_deploy.static_deploy_bucket_id
+
+  lambda_attach_policy_json        = true
+  lambda_policy_json               = data.aws_iam_policy_document.access_static_deployment.json
+  lambda_role_permissions_boundary = var.lambda_role_permissions_boundary
+
+  deployment_name = var.deployment_name
+  tags            = var.tags
+}
+
+##################
+# CloudFront Proxy
+##################
+locals {
+  next_image_cloudfront_origins = var.create_image_optimization ? [module.next_image[0].cloudfront_origin_image_optimizer] : []
+  proxy_cloudfront_origins = var.cloudfront_origins != null ? merge(
+    local.next_image_cloudfront_origins,
+    var.cloudfront_origins
+  ) : local.next_image_cloudfront_origins
+
+  # Custom CloudFront beheaviour for image optimization
+  next_image_custom_behavior = var.create_image_optimization ? [{
+    path_pattern     = "/image/*"
+    allowed_methods  = ["GET", "HEAD"]
+    cached_methods   = ["GET", "HEAD"]
+    target_origin_id = module.next_image[0].cloudfront_origin_image_optimizer.origin_id
+
+    compress               = true
+    viewer_protocol_policy = "redirect-to-https"
+
+    min_ttl     = 0
+    default_ttl = 86400
+    max_ttl     = 31536000
+
+    origin_request_policy_id = module.next_image[0].cloudfront_origin_request_policy_id
+    cache_policy_id          = module.next_image[0].cloudfront_cache_policy_id
+  }] : []
+
+  cloudfront_custom_behaviors = var.cloudfront_custom_behaviors != null ? merge(
+    local.next_image_custom_behavior,
+    var.cloudfront_custom_behaviors
+  ) : local.next_image_custom_behavior
+}
 
 #######
 # Proxy
@@ -234,8 +313,8 @@ module "proxy" {
   deployment_name                      = var.deployment_name
   proxy_config_ttl                     = var.proxy_config_ttl
   cloudfront_price_class               = var.cloudfront_price_class
-  cloudfront_origins                   = var.cloudfront_origins
-  cloudfront_custom_behaviors          = var.cloudfront_custom_behaviors
+  cloudfront_origins                   = local.proxy_cloudfront_origins
+  cloudfront_custom_behaviors          = local.cloudfront_custom_behaviors
   cloudfront_alias_domains             = var.domain_names
   cloudfront_viewer_certificate_arn    = var.cloudfront_viewer_certificate_arn
   cloudfront_minimum_protocol_version  = var.cloudfront_minimum_protocol_version

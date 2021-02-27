@@ -14,6 +14,16 @@ const CacheControlImmutable = 'public,max-age=31536000,immutable';
 const CacheControlStaticHtml =
   'public,max-age=0,must-revalidate,s-maxage=31536000';
 
+const getUploadParams = (Bucket: string, Key: string, Body: S3.Body, ContentType: string) => {
+  const uploadParams: S3.Types.PutObjectRequest = {
+    Bucket, Key, Body, ContentType,
+    CacheControl: ContentType === 'text/html'
+      ? CacheControlStaticHtml
+      : CacheControlImmutable,
+  };
+  return uploadParams
+}
+
 interface Props {
   s3: S3;
   sourceBucket: string;
@@ -40,6 +50,7 @@ export async function deployTrigger(props: Props): Promise<Response> {
   const uploads: Promise<S3.ManagedUpload.SendData>[] = [];
   // Keep track of all files that are processed
   const files: string[] = [];
+  const imageFiles: string[] = [];
 
   for await (const e of zip) {
     const entry = e as unzipper.Entry;
@@ -51,22 +62,20 @@ export async function deployTrigger(props: Props): Promise<Response> {
       // Static pre-rendered pages have no file extension,
       // files without extension get HTML mime type as fallback
       const ContentType = getType(fileName) || 'text/html';
+
+      if (ContentType.split('/')[0] === 'image') {
+        const KeyForImage = path.join('image',buildId,fileName)
+        const uploadParamsForImage = getUploadParams(deployBucket, KeyForImage, entry, ContentType)
+        uploads.push(s3.upload(uploadParamsForImage).promise())
+      }
+
       const Key = fileName.startsWith('_next/static/')
         ? path.join(`static`,buildId,fileName)
         : path.join(buildId, fileName)
-
-      const uploadParams: S3.Types.PutObjectRequest = {
-        Bucket: deployBucket,
-        Key,
-        Body: entry,
-        ContentType,
-        CacheControl: ContentType === 'text/html'
-          ? CacheControlStaticHtml
-          : CacheControlImmutable,
-      };
+      const uploadParams = getUploadParams(deployBucket, Key, entry, ContentType)
+      uploads.push(s3.upload(uploadParams).promise())
 
       files.push(fileName);
-      uploads.push(s3.upload(uploadParams).promise());
     } else {
       entry.autodrain();
     }

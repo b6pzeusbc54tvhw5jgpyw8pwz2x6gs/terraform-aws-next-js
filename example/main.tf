@@ -1,6 +1,12 @@
 terraform {
   required_version = "~> 0.14.5"
   backend "s3" {}
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 3.0"
+    }
+  }
 }
 
 provider "aws" {
@@ -38,14 +44,19 @@ module "tf-next" {
 
   # for local test
   source = "../"
-  static_deploy_package_abs_path = abspath("../packages/deploy-trigger/dist.zip")
-  proxy_package_abs_path         = abspath("../packages/proxy/dist.zip")
+  static_deploy_package_abs_path       = abspath("../packages/deploy-trigger/dist.zip")
+  proxy_package_abs_path               = abspath("../packages/proxy/dist.zip")
+  next_image_package_abs_path          = abspath("../../terraform-aws-next-js-image-optimization/lib/dist.zip")
 
   cloudfront_query_string              = true
   cloudfront_query_string_cache_keys   = null
   cloudfront_headers                   = null
   cloudfront_cookies_forward           = "whitelist"
   cloudfront_cookies_whitelisted_names = ["locale"]
+
+  next_image_path_prefix               = "image"
+  next_image_device_sizes              = [640, 750, 828, 1080, 1200, 1920, 2048, 3840]
+  next_image_image_sizes               = [16, 32, 48, 64, 96, 128, 256, 384]
 
   # If you want seperated application CI/CD solution,
   # you can use `use_manual_app_deploy: true`

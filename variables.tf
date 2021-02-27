@@ -1,3 +1,6 @@
+##########
+# Settings
+##########
 variable "next_tf_dir" {
   description = "Relative path to the .next-tf dir."
   type        = string
@@ -15,10 +18,33 @@ variable "name_suffix" {
   default     = null
 }
 
-variable "deployment_name" {
-  description = "Identifier for the deployment group (Added to Comments)."
+variable "create_image_optimization" {
+  description = "Controls whether resources for image optimization support should be created or not."
+  type        = bool
+  default     = true
+}
+
+variable "next_image_path_prefix" {
+  description = "Path prefix for images, It can be set in next.config.js"
   type        = string
-  default     = "Terraform-next.js"
+  default     = null
+}
+
+variable "next_image_package_abs_path" {
+  description = "Next image optimization lambda package"
+  type        = string
+}
+
+variable "next_image_device_sizes" {
+  description = "Allowed device sizes that should be used for image optimization."
+  type        = list(number)
+  default     = null
+}
+
+variable "next_image_image_sizes" {
+  description = "Allowed image sizes that should be used for image optimization."
+  type        = list(number)
+  default     = null
 }
 
 variable "enable_log" {
@@ -61,15 +87,9 @@ variable "domain_zone_names" {
 }
 
 variable "expire_static_assets" {
-  description = "The number of days after which static assets from previous deployments should be removed from S3. Set to -1 to disable expiration."
+  description = "Number of days after which static assets from previous deployments should be removed from S3. Set to -1 to disable expiration."
   type        = number
   default     = 30
-}
-
-variable "tags" {
-  description = " The tag metadata to label resources with that support tags."
-  type    = map(string)
-  default = {}
 }
 
 ###################
@@ -78,7 +98,7 @@ variable "tags" {
 
 variable "lambda_environment_variables" {
   type        = map(string)
-  description = "A map that defines environment variables for the Lambda Functions in Next.js."
+  description = "Map that defines environment variables for the Lambda Functions in Next.js."
   default     = {}
 }
 
@@ -95,13 +115,13 @@ variable "lambda_memory_size" {
 }
 
 variable "lambda_timeout" {
-  description = "The max amount of time a Lambda Function has to return a response in seconds. Should not be more than 30 (Limited by API Gateway)."
+  description = "Max amount of time a Lambda Function has to return a response in seconds. Should not be more than 30 (Limited by API Gateway)."
   type        = number
   default     = 10
 }
 
 variable "lambda_policy_json" {
-  description = "An additional policy document as JSON to attach to the Lambda Function role"
+  description = "Additional policy document as JSON to attach to the Lambda Function role"
   type        = string
   default     = null
 }
@@ -118,7 +138,7 @@ variable "lambda_role_permissions_boundary" {
 #########################
 
 variable "cloudfront_price_class" {
-  description = "The price class for the CloudFront distributions (main & proxy config). One of PriceClass_All, PriceClass_200, PriceClass_100."
+  description = "Price class for the CloudFront distributions (main & proxy config). One of PriceClass_All, PriceClass_200, PriceClass_100."
   type        = string
   default     = "PriceClass_100"
 }
@@ -129,7 +149,7 @@ variable "cloudfront_viewer_certificate_arn" {
 }
 
 variable "cloudfront_minimum_protocol_version" {
-  description = "The minimum version of the SSL protocol that you want CloudFront to use for HTTPS connections. One of SSLv3, TLSv1, TLSv1_2016, TLSv1.1_2016, TLSv1.2_2018 or TLSv1.2_2019."
+  description = "Minimum version of the SSL protocol that you want CloudFront to use for HTTPS connections. One of SSLv3, TLSv1, TLSv1_2016, TLSv1.1_2016, TLSv1.2_2018 or TLSv1.2_2019."
   type        = string
   default     = "TLSv1.2_2019"
 }
@@ -174,6 +194,21 @@ variable "proxy_config_ttl" {
 variable "use_manual_app_deploy" {
   type    = bool
   default = false
+}
+
+##########
+# Labeling
+##########
+variable "deployment_name" {
+  description = "Identifier for the deployment group (alphanumeric characters, underscores, hyphens, slashes, hash signs and dots are allowed)."
+  type        = string
+  default     = "tf-next"
+}
+
+variable "tags" {
+  description = "Tag metadata to label AWS resources that support tags."
+  type        = map(string)
+  default     = {}
 }
 
 ################
