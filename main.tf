@@ -223,9 +223,9 @@ data "aws_iam_policy_document" "access_static_deployment" {
 module "next_image" {
   count = var.create_image_optimization ? 1 : 0
 
-  # source  = "github.com/b6pzeusbc54tvhw5jgpyw8pwz2x6gs/terraform-aws-next-js-image-optimization"
+  source  = "github.com/b6pzeusbc54tvhw5jgpyw8pwz2x6gs/terraform-aws-next-js-image-optimization"
   # version = "2.0.0"
-  source  = "../terraform-aws-next-js-image-optimization"
+  # source  = "../terraform-aws-next-js-image-optimization"
 
   cloudfront_create_distribution = false
   next_image_path_prefix         = var.next_image_path_prefix
