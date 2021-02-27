@@ -50,6 +50,7 @@ export const Header = () => {
       <nav css={cnPart3}>
         <Link href="/image-background"><a>background</a></Link>
         <Link href="/image-quality"><a>quality</a></Link>
+        <Link href="/image-https-source"><a>https-source</a></Link>
         <Link href="/image-layout-fill"><a>layout-fill</a></Link>
         <Link href="/image-layout-fixed"><a>layout-fixed</a></Link>
         <Link href="/image-layout-intrinsic"><a>layout-intrinsic</a></Link>
