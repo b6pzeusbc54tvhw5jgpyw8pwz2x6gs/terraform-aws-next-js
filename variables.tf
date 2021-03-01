@@ -47,6 +47,12 @@ variable "next_image_image_sizes" {
   default     = null
 }
 
+variable "next_image_domains" {
+  description = "Allowed origin domains that can be used for fetching images."
+  type        = list(string)
+  default     = []
+}
+
 variable "enable_log" {
   type        = bool
   default     = false

@@ -237,11 +237,12 @@ module "next_image" {
   # device) sizes to the optimizer and by setting the other
   # (next_image_device_sizes) to an empty array which prevents the optimizer
   # from adding the default device settings
-  next_image_domains      = lookup(local.config_file_images, "domains", [])
+  # next_image_domains      = lookup(local.config_file_images, "domains", [])
   # next_image_device_sizes = []
   # next_image_image_sizes  = lookup(local.config_file_images, "sizes", [])
   next_image_device_sizes = var.next_image_device_sizes
   next_image_image_sizes  = var.next_image_image_sizes
+  next_image_domains      = var.next_image_domains
 
   source_bucket_id = module.statics_deploy.static_deploy_bucket_id
 

@@ -57,6 +57,7 @@ module "tf-next" {
   next_image_path_prefix               = "image"
   next_image_device_sizes              = [640, 750, 828, 1080, 1200, 1920, 2048, 3840]
   next_image_image_sizes               = [16, 32, 48, 64, 96, 128, 256, 384]
+  next_image_domains                   = ["bigcommerce-demo-asset-ksvtgfvnd.vercel.app"]
 
   # If you want seperated application CI/CD solution,
   # you can use `use_manual_app_deploy: true`
