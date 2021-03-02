@@ -125,8 +125,8 @@ module "api_gateway" {
   source  = "terraform-aws-modules/apigateway-v2/aws"
   version = "0.8.0"
 
-  name          = "${var.name_prefix}-${local.name_suffix}"
-  description   = "${var.name_prefix} Managed by Terraform-next.js"
+  name          = "${var.name_prefix}-main-${local.name_suffix}"
+  description   = "${var.name_prefix} nextjs SSR managed by terraform"
   protocol_type = "HTTP"
 
   create_api_domain_name = false
@@ -228,6 +228,8 @@ module "next_image" {
   # source  = "../terraform-aws-next-js-image-optimization"
 
   cloudfront_create_distribution = false
+  name_prefix                    = var.name_prefix
+  name_suffix                    = local.name_suffix
   next_image_path_prefix         = var.next_image_path_prefix
   next_image_package_abs_path    = var.next_image_package_abs_path
 

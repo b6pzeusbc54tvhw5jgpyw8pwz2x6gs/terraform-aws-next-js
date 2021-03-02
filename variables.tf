@@ -33,6 +33,7 @@ variable "next_image_path_prefix" {
 variable "next_image_package_abs_path" {
   description = "Next image optimization lambda package"
   type        = string
+  default     = null
 }
 
 variable "next_image_device_sizes" {
