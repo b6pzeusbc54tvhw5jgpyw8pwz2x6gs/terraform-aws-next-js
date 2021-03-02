@@ -63,12 +63,6 @@ export async function deployTrigger(props: Props): Promise<Response> {
       // files without extension get HTML mime type as fallback
       const ContentType = getType(fileName) || 'text/html';
 
-      if (ContentType.split('/')[0] === 'image') {
-        const KeyForImage = path.join('image',buildId,fileName)
-        const uploadParamsForImage = getUploadParams(deployBucket, KeyForImage, entry, ContentType)
-        uploads.push(s3.upload(uploadParamsForImage).promise())
-      }
-
       const Key = fileName.startsWith('_next/static/')
         ? path.join(`static`,buildId,fileName)
         : path.join(buildId, fileName)
