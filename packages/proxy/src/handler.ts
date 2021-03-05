@@ -136,6 +136,7 @@ export const handler: CloudFrontRequestHandler = async (event) => {
         : '';
     } else if (proxyResult.phase === 'error' && proxyResult.status === 404) {
       // Send 404 directly to S3 bucket for handling without rewrite
+      console.log('error uri: '+ path.join(`/${buildId}`, proxyResult.dest))
       return {
         ...request,
         uri: path.join(`/${buildId}`, proxyResult.dest),
