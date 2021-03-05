@@ -230,7 +230,7 @@ module "next_image" {
   cloudfront_create_distribution = false
   name_prefix                    = var.name_prefix
   name_suffix                    = local.name_suffix
-  next_image_path_prefix         = var.next_image_path_prefix
+  next_image_path_prefix         = var.next_image_path_prefix == null ? "_next" : var.next_image_path_prefix
   next_image_package_abs_path    = var.next_image_package_abs_path
 
   # tf-next does not distinct between image and device sizes, because they
