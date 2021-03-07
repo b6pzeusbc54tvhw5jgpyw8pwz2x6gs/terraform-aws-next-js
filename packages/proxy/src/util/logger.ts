@@ -5,7 +5,7 @@ const isLogLevel = (level: any): level is LogLevel => {
   return logLevels.indexOf(level) > -1
 }
 
-let loggers: Record<string, Logger>
+const loggers: Record<string, Logger> = {}
 export const getLogger = (pLogLevel: string, type: string='-') => {
   const key = `${pLogLevel}-${type}`
   if (loggers[key]) return loggers[key]

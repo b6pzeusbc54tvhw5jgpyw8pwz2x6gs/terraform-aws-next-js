@@ -22,14 +22,27 @@ export const handler: S3Handler = async function (event) {
   // Unpack the package
   await deployTrigger({
     s3, sourceBucket, deployBucket, key, versionId, buildId,
-  });
+  })
+
+  await Promise.all([
+    s3.copyObject({
+      CopySource: `/${deployBucket}/${buildId}/404`,
+      Bucket: deployBucket, Key: '404',
+    }).promise(),
+    s3.copyObject({
+      CopySource: `/${deployBucket}/${buildId}/500`,
+      Bucket: deployBucket, Key: '500',
+    }).promise(),
+  ])
 
   const cloudFront = new CloudFront({ apiVersion: '2020-05-31' });
   await cloudFront.createInvalidation({
     DistributionId: distributionId,
     InvalidationBatch: {
       CallerReference: `${new Date().getTime()}-${generateRandomId(4)}`,
-      Paths: { Quantity: 1, Items: ['/*'] }
+      // Invalidation of other paths are unnesessary.
+      // Because it use immutable paths like `/${buildId}/*` expect /404, /500
+      Paths: { Quantity: 2, Items: ['/404', '/500'] },
     }
   }).promise()
 };

@@ -220,8 +220,17 @@ resource "aws_cloudfront_distribution" "distribution" {
   custom_error_response {
     error_caching_min_ttl = 60
     error_code            = 403
-    # response_code         = 404
-    # response_page_path    = "/404"  # It should be handle as `${buildId}/404` at proxy edge lambda
+    response_code         = 404
+    # We can't chnage it like `/{buildId}/404` for everytime build,
+    # /404 file must be copied to `/404` path from `/${buildId}/404`
+    response_page_path    = "/404"
+  }
+
+  custom_error_response {
+    error_caching_min_ttl = 60
+    error_code            = 500
+    response_code         = 500
+    response_page_path    = "/500"
   }
 
   viewer_certificate {
