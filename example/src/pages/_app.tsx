@@ -1,14 +1,14 @@
-// import App from "next/app";
-import type { AppProps, AppContext } from 'next/app'
-import App from 'next/app'
+import App, {AppProps, AppContext} from 'next/app'
 import Head from 'next/head'
 import cookie from 'cookie'
+import React, { useEffect } from 'react'
+import { NextPageContext } from 'next'
 import { Global, css } from '@emotion/react'
+
 import { Header } from '../components/Header'
 import { NLS } from '../types'
 import { NLSContext } from '../nls'
-import { useEffect } from 'react'
-import { NextPageContext } from 'next'
+import { Footer } from '../components/Footer'
 
 const cssGlobalStyles = css`
   body {
@@ -37,6 +37,7 @@ function MyApp(props: Props) {
       </Head>
       <Header/>
       <Component {...pageProps} />
+      <Footer/>
     </NLSContext.Provider>
   )
 }
