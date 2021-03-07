@@ -4,6 +4,7 @@ import { CloudFrontRequestHandler, CloudFrontHeaders, CloudFrontRequest, CloudFr
 import { ProxyConfig, HTTPHeaders, ApiGatewayOriginProps, RouteResult } from './types';
 import { Proxy } from './proxy';
 import { fetchProxyConfigWithCache } from './util/fetch-proxy-config';
+import { getLogger } from './util/logger'
 
 let proxy: Proxy;
 let cachedProxyConfig: ProxyConfig
@@ -25,17 +26,14 @@ function convertToCloudFrontHeaders(
  * Checks if a route result issued a redirect
  */
 function isRedirect(routeResult: RouteResult): false | CloudFrontResultResponse {
-  if (
-    routeResult.status &&
-    routeResult.status >= 300 &&
-    routeResult.status <= 309
-  ) {
+  const {status, headers} = routeResult
+  if (status && status >= 300 && status <= 309) {
     if ('Location' in routeResult.headers) {
-      let headers: CloudFrontHeaders = {};
+      let additionalHeaders: CloudFrontHeaders = {};
 
       // If the redirect is permanent, add caching it
-      if (routeResult.status === 301 || routeResult.status === 308) {
-        headers['cache-control'] = [
+      if (status === 301 || status === 308) {
+        additionalHeaders['cache-control'] = [
           {
             key: 'Cache-Control',
             value: 'public,max-age=31536000,immutable',
@@ -44,9 +42,9 @@ function isRedirect(routeResult: RouteResult): false | CloudFrontResultResponse 
       }
 
       return {
-        status: routeResult.status.toString(),
-        statusDescription: STATUS_CODES[routeResult.status],
-        headers: convertToCloudFrontHeaders(headers, routeResult.headers),
+        status: status.toString(),
+        statusDescription: STATUS_CODES[status],
+        headers: convertToCloudFrontHeaders(additionalHeaders, headers),
       };
     }
   }
@@ -86,7 +84,11 @@ export const handler: CloudFrontRequestHandler = async (event) => {
   const {customHeaders} = request.origin?.s3 || { customHeaders: {} }
   const configEndpoint = customHeaders['x-env-config-endpoint'][0].value;
   const apiEndpoint = customHeaders['x-env-api-endpoint'][0].value;
+  const logLevel = customHeaders['x-enable-debug']?.[0]?.value || 'INFO';
   const configTTL = Number(customHeaders['x-env-config-ttl']?.[0]?.value || '60')
+
+  const logger = getLogger(logLevel)
+  logger.debug('host: ' + request.headers['host']?.[0]?.value)
 
   let headers: Record<string, string> = {};
 
@@ -122,6 +124,7 @@ export const handler: CloudFrontRequestHandler = async (event) => {
     // Check for redirect
     const redirect = isRedirect(proxyResult);
     if (redirect) {
+      logger.debug('redirect: ' + redirect)
       return redirect;
     }
 
@@ -134,16 +137,19 @@ export const handler: CloudFrontRequestHandler = async (event) => {
       request.querystring = proxyResult.uri_args
         ? proxyResult.uri_args.toString()
         : '';
+
+      logger.debug(`proxyResult.target === 'lambda'`)
+
     } else if (proxyResult.phase === 'error' && proxyResult.status === 404) {
       // Send 404 directly to S3 bucket for handling without rewrite
-      console.log('error uri: '+ path.join(`/${buildId}`, proxyResult.dest))
-      return {
-        ...request,
-        uri: path.join(`/${buildId}`, proxyResult.dest),
-      }
+      logger.debug("phase === 'error' && status === 404");
+      logger.debug(`request.uri: ${request.uri}, proxyResult.dest: ${proxyResult.dest}`);
+      return request;
     } else {
       // Route is served by S3 bucket
       if (proxyResult.found) {
+        logger.debug('proxyResult.found: ' + proxyResult.found);
+        logger.debug(path.join(`/${buildId}`, proxyResult.dest));
         request.uri = path.join(`/${buildId}`, proxyResult.dest);
       }
     }
@@ -154,9 +160,9 @@ export const handler: CloudFrontRequestHandler = async (event) => {
   // Modify headers
   request.headers = convertToCloudFrontHeaders(request.headers, headers);
 
-  if (!request.uri) {
-    request.uri = '/';
-  }
+  request.uri = request.uri || '/';
 
+  logger.debug("End of handler");
+  logger.debug(`request.uri: ${request.uri}`);
   return request;
 };
