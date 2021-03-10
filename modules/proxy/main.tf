@@ -166,9 +166,48 @@ resource "aws_cloudfront_distribution" "distribution" {
     }
   }
 
+  # Next.js static assets
+  ordered_cache_behavior {
+    path_pattern     = "/static/*"  # /static/${buildId}/_next/static/*
+    allowed_methods  = ["GET", "HEAD"]
+    cached_methods   = ["GET", "HEAD"]
+    target_origin_id = local.origin_id_static_deployment
+
+    forwarded_values {
+      query_string = false
+
+      cookies {
+        forward = "none"
+      }
+    }
+
+    compress               = true
+    viewer_protocol_policy = "redirect-to-https"
+    min_ttl                = 0
+    default_ttl            = 86400
+    max_ttl                = 31536000
+  }
+
   # Custom behaviors
   dynamic "ordered_cache_behavior" {
     for_each = var.cloudfront_custom_behaviors != null ? var.cloudfront_custom_behaviors : []
+    content {
+      path_pattern     = ordered_cache_behavior.value["path_pattern"]
+      allowed_methods  = ordered_cache_behavior.value["allowed_methods"]
+      cached_methods   = ordered_cache_behavior.value["cached_methods"]
+      target_origin_id = ordered_cache_behavior.value["target_origin_id"]
+
+      compress               = ordered_cache_behavior.value["compress"]
+      viewer_protocol_policy = ordered_cache_behavior.value["viewer_protocol_policy"]
+
+      origin_request_policy_id = ordered_cache_behavior.value["origin_request_policy_id"]
+      cache_policy_id          = ordered_cache_behavior.value["cache_policy_id"]
+    }
+  }
+
+  # Custom legacy behaviors
+  dynamic "ordered_cache_behavior" {
+    for_each = var.cloudfront_custom_legacy_behaviors!= null ? var.cloudfront_custom_legacy_behaviors : []
     content {
       path_pattern     = ordered_cache_behavior.value["path_pattern"]
       allowed_methods  = ordered_cache_behavior.value["allowed_methods"]
@@ -191,28 +230,6 @@ resource "aws_cloudfront_distribution" "distribution" {
         }
       }
     }
-  }
-
-  # Next.js static assets
-  ordered_cache_behavior {
-    path_pattern     = "/static/*"  # /static/${buildId}/_next/static/*
-    allowed_methods  = ["GET", "HEAD"]
-    cached_methods   = ["GET", "HEAD"]
-    target_origin_id = local.origin_id_static_deployment
-
-    forwarded_values {
-      query_string = false
-
-      cookies {
-        forward = "none"
-      }
-    }
-
-    compress               = true
-    viewer_protocol_policy = "redirect-to-https"
-    min_ttl                = 0
-    default_ttl            = 86400
-    max_ttl                = 31536000
   }
 
   # Custom error response when a doc is not found in S3 (returns 403)
@@ -246,3 +263,4 @@ resource "aws_cloudfront_distribution" "distribution" {
     }
   }
 }
+

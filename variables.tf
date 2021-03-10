@@ -166,6 +166,11 @@ variable "cloudfront_origins" {
   default = null
 }
 
+variable "cloudfront_custom_legacy_behaviors" {
+  type    = list(any)
+  default = null
+}
+
 variable "cloudfront_custom_behaviors" {
   type    = list(any)
   default = null

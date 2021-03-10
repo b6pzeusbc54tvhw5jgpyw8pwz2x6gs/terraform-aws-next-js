@@ -276,10 +276,6 @@ locals {
     compress               = true
     viewer_protocol_policy = "redirect-to-https"
 
-    min_ttl     = 0
-    default_ttl = 86400
-    max_ttl     = 31536000
-
     origin_request_policy_id = module.next_image[0].cloudfront_origin_request_policy_id
     cache_policy_id          = module.next_image[0].cloudfront_cache_policy_id
   }] : []
@@ -318,6 +314,7 @@ module "proxy" {
   cloudfront_price_class               = var.cloudfront_price_class
   cloudfront_origins                   = local.proxy_cloudfront_origins
   cloudfront_custom_behaviors          = local.cloudfront_custom_behaviors
+  cloudfront_custom_legacy_behaviors   = var.cloudfront_custom_legacy_behaviors
   cloudfront_alias_domains             = var.domain_names
   cloudfront_viewer_certificate_arn    = var.cloudfront_viewer_certificate_arn
   cloudfront_minimum_protocol_version  = var.cloudfront_minimum_protocol_version
