@@ -28,6 +28,10 @@ output "apigw_api_execution_arn" {
   value = module.api_gateway.this_apigatewayv2_api_execution_arn
 }
 
+output "cicd_iam_user_name" {
+  value = aws_iam_user.cicd.name
+}
+
 output "aws_credential_for_cicd" {
   value = <<EOT
 export AWS_ACCESS_KEY_ID=${aws_iam_access_key.cicd.id}
